@@ -1,41 +1,59 @@
-import { useEffect, useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useEffect, useState, useCallback } from 'react'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { useAuth } from '../../hooks/useAuth'
-import { getTab, TABS } from '../../config/tabs'
+import { getTab } from '../../config/tabs'
 import {
-  getFacultyRecords,
-  addRecord,
-  updateRecord,
-  deleteRecord,
-  saveFacultyRecords,
+  getFacultyRecords, addRecord, updateRecord, deleteRecord,
 } from '../../lib/github'
 import DynamicField from '../common/DynamicField'
 import toast from 'react-hot-toast'
 
+function formatDate(iso) {
+  if (!iso) return '—'
+  return new Date(iso).toLocaleString('en-IN', {
+    day: '2-digit', month: 'short', year: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+  })
+}
+
 export default function TabForm() {
   const { tabId }    = useParams()
   const { session }  = useAuth()
+  const navigate     = useNavigate()
   const tab          = getTab(tabId)
 
   const [records,  setRecords]  = useState([])
-  const [editing,  setEditing]  = useState(null)   // record id being edited
+  const [editing,  setEditing]  = useState(null)
   const [showForm, setShowForm] = useState(false)
   const [loading,  setLoading]  = useState(true)
   const [saving,   setSaving]   = useState(false)
+  const [isDirty,  setIsDirty]  = useState(false)
 
-  const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm()
+  const { register, handleSubmit, reset, watch, setValue,
+          formState: { errors, isDirty: formDirty } } = useForm()
 
+  // Track form dirtiness for unsaved-changes warning
+  useEffect(() => { setIsDirty(formDirty) }, [formDirty])
+
+  // Warn before navigating away with unsaved changes
   useEffect(() => {
-    if (tab) fetchRecords()
-  }, [tabId])
+    if (!isDirty) return
+    function onBeforeUnload(e) {
+      e.preventDefault()
+      e.returnValue = ''
+    }
+    window.addEventListener('beforeunload', onBeforeUnload)
+    return () => window.removeEventListener('beforeunload', onBeforeUnload)
+  }, [isDirty])
+
+  useEffect(() => { if (tab) fetchRecords() }, [tabId])
 
   async function fetchRecords() {
     setLoading(true)
     try {
       const data = await getFacultyRecords(tab.id, session.userId)
       setRecords(data)
-      // For profile tabs: pre-fill form if a record exists
       if (tab.isProfile && data.length > 0) reset(data[0])
     } catch (e) {
       toast.error('Failed to load records: ' + e.message)
@@ -50,7 +68,6 @@ export default function TabForm() {
       const payload = { ...values, facultyName: session.fullName }
 
       if (tab.isProfile) {
-        // Upsert: one record per faculty
         const current = records[0]
         if (current) {
           const updated = await updateRecord(tab.id, session.userId, current.id, payload)
@@ -74,6 +91,7 @@ export default function TabForm() {
         reset()
         toast.success('Record saved!')
       }
+      setIsDirty(false)
     } catch (e) {
       toast.error('Save failed: ' + e.message)
     } finally {
@@ -100,17 +118,18 @@ export default function TabForm() {
   }
 
   function cancelForm() {
+    if (isDirty && !confirm('You have unsaved changes. Discard them?')) return
     reset()
     setEditing(null)
     setShowForm(false)
+    setIsDirty(false)
   }
 
   if (!tab) return <div className="p-8 text-center text-gray-500">Tab not found.</div>
 
-  // Preview columns for the table (first 5 non-bulky fields)
   const previewFields = tab.fields
     .filter(f => !['file', 'textarea', 'boolean'].includes(f.type))
-    .slice(0, 5)
+    .slice(0, 4)
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
@@ -123,25 +142,36 @@ export default function TabForm() {
         </h1>
       </div>
 
-      {/* GitHub API note */}
+      {/* Saving indicator */}
       {saving && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 mb-4 text-sm text-blue-700 flex items-center gap-2">
           <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-          Saving to repository… this may take a few seconds.
+          Saving to repository… this takes a few seconds.
         </div>
       )}
 
-      {/* Form (profile tabs always show, others toggle) */}
+      {/* Unsaved changes banner */}
+      {isDirty && !saving && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 mb-4 text-sm text-amber-700 flex items-center gap-2">
+          ⚠️ You have unsaved changes.
+        </div>
+      )}
+
+      {/* Form */}
       {(showForm || tab.isProfile) && (
         <div className="card mb-6">
-          <h2 className="font-semibold text-gray-800 mb-4">
-            {editing ? '✏️ Edit Record' : tab.isProfile ? '📝 My Profile Info' : '➕ Add New Entry'}
-          </h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-semibold text-gray-800">
+              {editing ? '✏️ Edit Record' : tab.isProfile ? '📝 My Profile Info' : '➕ Add New Entry'}
+            </h2>
+            {/* Required field legend */}
+            <p className="text-xs text-gray-400"><span className="text-red-500">*</span> Required fields</p>
+          </div>
+
           <form onSubmit={handleSubmit(onSubmit)}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {tab.fields.map(field => (
-                <div
-                  key={field.key}
+                <div key={field.key}
                   className={['textarea', 'file', 'url'].includes(field.type) ? 'md:col-span-2' : ''}
                 >
                   <DynamicField
@@ -164,17 +194,25 @@ export default function TabForm() {
               )}
             </div>
           </form>
+
+          {/* Last updated info for profile tab */}
+          {tab.isProfile && records[0] && (
+            <div className="mt-4 pt-3 border-t border-gray-100 text-xs text-gray-400 space-y-0.5">
+              <p>📅 Created: {formatDate(records[0].createdAt)}</p>
+              <p>🔄 Last updated: {formatDate(records[0].updatedAt || records[0].createdAt)}</p>
+            </div>
+          )}
         </div>
       )}
 
-      {/* Add button for multi-record tabs */}
+      {/* Add button */}
       {!tab.isProfile && !showForm && (
         <button onClick={() => { setEditing(null); reset(); setShowForm(true) }} className="btn-primary mb-6">
           ➕ Add New Entry
         </button>
       )}
 
-      {/* Records Table */}
+      {/* Records table */}
       {!tab.isProfile && (
         <div className="card">
           <h2 className="font-semibold text-gray-800 mb-4">My Entries ({records.length})</h2>
@@ -200,6 +238,7 @@ export default function TabForm() {
                       </th>
                     ))}
                     <th className="text-left px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">Added</th>
+                    <th className="text-left px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">Updated</th>
                     <th className="px-3 py-2" />
                   </tr>
                 </thead>
@@ -207,13 +246,12 @@ export default function TabForm() {
                   {records.map(row => (
                     <tr key={row.id} className="border-b border-gray-50 hover:bg-gray-50">
                       {previewFields.map(f => (
-                        <td key={f.key} className="px-3 py-2 text-gray-700 max-w-[180px] truncate" title={String(row[f.key] ?? '')}>
+                        <td key={f.key} className="px-3 py-2 text-gray-700 max-w-[160px] truncate" title={String(row[f.key] ?? '')}>
                           {row[f.key] ?? <span className="text-gray-300">—</span>}
                         </td>
                       ))}
-                      <td className="px-3 py-2 text-gray-400 text-xs whitespace-nowrap">
-                        {row.createdAt ? new Date(row.createdAt).toLocaleDateString() : '—'}
-                      </td>
+                      <td className="px-3 py-2 text-gray-400 text-xs whitespace-nowrap">{formatDate(row.createdAt)}</td>
+                      <td className="px-3 py-2 text-gray-400 text-xs whitespace-nowrap">{formatDate(row.updatedAt)}</td>
                       <td className="px-3 py-2">
                         <div className="flex gap-3">
                           <button onClick={() => startEdit(row)} className="text-pdeu-blue hover:underline text-xs">Edit</button>

@@ -4,7 +4,7 @@ import { arrayMove, SortableContext, verticalListSortingStrategy, useSortable } 
 import { CSS } from '@dnd-kit/utilities'
 import { getAllRecordsForTab, getAllFaculties } from '../../lib/github'
 import { TABS, ACADEMIC_YEARS, getTab } from '../../config/tabs'
-import { exportToExcel } from '../../utils/exportExcel'
+import { exportToExcel, exportMultiSheet } from '../../utils/exportExcel'
 import toast from 'react-hot-toast'
 
 function SortableColumn({ id, label, onRemove }) {
@@ -30,6 +30,7 @@ export default function ExportBuilder() {
   const [faculties,      setFaculties]      = useState([])
   const [rows,           setRows]           = useState([])
   const [loading,        setLoading]        = useState(false)
+  const [exportingAll,   setExportingAll]   = useState(false)
   const [previewReady,   setPreviewReady]   = useState(false)
 
   const tab     = getTab(selectedTab)
@@ -37,6 +38,7 @@ export default function ExportBuilder() {
     { key: 'facultyName', label: 'Faculty Name' },
     ...tab.fields.map(f => ({ key: f.key, label: f.label })),
     { key: 'createdAt', label: 'Date Added' },
+    { key: 'updatedAt', label: 'Last Updated' },
   ], [selectedTab])
 
   const [chosen, setChosen] = useState(allCols)
@@ -44,16 +46,17 @@ export default function ExportBuilder() {
   const available  = allCols.filter(c => !chosenKeys.includes(c.key))
 
   useEffect(() => { setChosen(allCols); setPreviewReady(false); setRows([]) }, [selectedTab])
-
-  useEffect(() => {
-    getAllFaculties().then(list => setFaculties(list)).catch(() => {})
-  }, [])
+  useEffect(() => { getAllFaculties().then(setFaculties).catch(() => {}) }, [])
 
   const sensors = useSensors(useSensor(PointerSensor))
 
   function handleDragEnd({ active, over }) {
     if (active.id !== over?.id) {
-      setChosen(prev => arrayMove(prev, prev.findIndex(c => c.key === active.id), prev.findIndex(c => c.key === over.id)))
+      setChosen(prev => arrayMove(
+        prev,
+        prev.findIndex(c => c.key === active.id),
+        prev.findIndex(c => c.key === over.id)
+      ))
     }
   }
 
@@ -83,10 +86,59 @@ export default function ExportBuilder() {
     toast.success('Excel downloaded!')
   }
 
+  // ── Export ALL tabs as one multi-sheet Excel ──────────────────
+  async function exportAllTabs() {
+    if (!confirm(`This will download ALL ${TABS.length} tabs as one Excel file. It may take 1–2 minutes. Continue?`)) return
+    setExportingAll(true)
+    toast('Fetching all tab data… please wait.', { icon: '⏳', duration: 60000, id: 'exportall' })
+    try {
+      const sheets = []
+      for (const t of TABS) {
+        let data = await getAllRecordsForTab(t.id)
+        if (facultyFilter) data = data.filter(r => r.facultyName === facultyFilter)
+        if (yearFilter)    data = data.filter(r => String(r.academic_year ?? '').includes(yearFilter))
+        const cols = [
+          { key: 'facultyName', label: 'Faculty Name' },
+          ...t.fields.map(f => ({ key: f.key, label: f.label })),
+          { key: 'createdAt', label: 'Date Added' },
+          { key: 'updatedAt', label: 'Last Updated' },
+        ]
+        sheets.push({ rows: data, columns: cols, sheetName: `${t.number}. ${t.name}` })
+      }
+      await exportMultiSheet(sheets)
+      toast.success('All tabs exported!', { id: 'exportall' })
+    } catch (e) {
+      toast.error('Export failed: ' + e.message, { id: 'exportall' })
+    } finally {
+      setExportingAll(false)
+    }
+  }
+
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <h1 className="text-2xl font-bold text-pdeu-blue mb-1">📥 Export Builder</h1>
       <p className="text-gray-500 text-sm mb-8">Choose a tab, pick and reorder columns, filter, then download as Excel.</p>
+
+      {/* Export All button */}
+      <div className="card mb-6 flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <p className="font-semibold text-gray-800">Export All Tabs at Once</p>
+          <p className="text-sm text-gray-500 mt-0.5">
+            Downloads all {TABS.length} tabs as a single Excel file with one sheet per tab.
+            Filters below (faculty / year) also apply.
+          </p>
+        </div>
+        <button
+          onClick={exportAllTabs}
+          disabled={exportingAll}
+          className="btn-primary flex items-center gap-2 whitespace-nowrap"
+        >
+          {exportingAll
+            ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"/>Exporting…</>
+            : '📊 Export All Tabs'
+          }
+        </button>
+      </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* Left panel */}
@@ -99,7 +151,7 @@ export default function ExportBuilder() {
           </div>
 
           <div className="card">
-            <h2 className="font-semibold text-gray-800 mb-3">2. Apply Filters</h2>
+            <h2 className="font-semibold text-gray-800 mb-3">2. Apply Filters <span className="text-xs font-normal text-gray-400">(also applies to Export All)</span></h2>
             <div className="space-y-3">
               <div>
                 <label className="form-label">Faculty Name</label>
@@ -194,7 +246,7 @@ export default function ExportBuilder() {
                     {rows.slice(0, 10).map((row, i) => (
                       <tr key={i} className={`border-b border-gray-50 ${i % 2 === 1 ? 'bg-gray-50/50' : ''}`}>
                         {chosen.map(c => (
-                          <td key={c.key} className="px-3 py-2 text-gray-600 max-w-[160px] truncate" title={String(row[c.key] ?? '')}>
+                          <td key={c.key} className="px-3 py-2 text-gray-600 max-w-[160px] truncate">
                             {row[c.key] != null && row[c.key] !== '' ? String(row[c.key]) : <span className="text-gray-300">—</span>}
                           </td>
                         ))}
@@ -203,7 +255,7 @@ export default function ExportBuilder() {
                   </tbody>
                 </table>
                 {rows.length > 10 && (
-                  <p className="text-center text-xs text-gray-400 py-2">…and {rows.length - 10} more rows (all included in download)</p>
+                  <p className="text-center text-xs text-gray-400 py-2">…and {rows.length - 10} more rows</p>
                 )}
               </div>
             </div>

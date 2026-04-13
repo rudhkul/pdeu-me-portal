@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import toast from 'react-hot-toast'
@@ -9,6 +9,14 @@ export default function Login() {
   const [email,    setEmail]    = useState('')
   const [password, setPassword] = useState('')
   const [loading,  setLoading]  = useState(false)
+
+  // Show session-expired notice if redirected from auto-logout
+  useEffect(() => {
+    if (sessionStorage.getItem('session_expired')) {
+      toast('Your session expired. Please log in again.', { icon: '⏰' })
+      sessionStorage.removeItem('session_expired')
+    }
+  }, [])
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -37,24 +45,16 @@ export default function Login() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="form-label">Email Address</label>
-            <input
-              type="email"
-              className="form-input"
-              value={email}
+            <input type="email" className="form-input" value={email}
               onChange={e => setEmail(e.target.value)}
-              placeholder="you@pdpu.ac.in"
-              required autoFocus
+              placeholder="you@pdpu.ac.in" required autoFocus
             />
           </div>
           <div>
             <label className="form-label">Password</label>
-            <input
-              type="password"
-              className="form-input"
-              value={password}
+            <input type="password" className="form-input" value={password}
               onChange={e => setPassword(e.target.value)}
-              placeholder="••••••••"
-              required
+              placeholder="••••••••" required
             />
           </div>
           <button type="submit" className="btn-primary w-full mt-2" disabled={loading}>
@@ -62,9 +62,14 @@ export default function Login() {
           </button>
         </form>
 
-        <p className="text-center text-xs text-gray-400 mt-6">
-          Contact your administrator if you need access.
-        </p>
+        {/* Forgot password guidance */}
+        <div className="mt-6 bg-gray-50 rounded-xl p-4">
+          <p className="text-xs font-semibold text-gray-500 mb-1">Forgot your password?</p>
+          <p className="text-xs text-gray-400">
+            Contact your department administrator (Salman, Krunal, Vivek Jaiswal, Anirudh, or Abhinaya)
+            to reset it. Once reset, log in and go to <span className="font-medium text-gray-600">🔒 Change Password</span> to set your own.
+          </p>
+        </div>
       </div>
     </div>
   )
