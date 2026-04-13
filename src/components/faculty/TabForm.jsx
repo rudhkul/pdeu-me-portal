@@ -6,6 +6,8 @@ import { getTab } from '../../config/tabs'
 import { getFacultyRecords, addRecord, updateRecord, deleteRecord } from '../../lib/github'
 import { notifyAdmin } from '../../lib/notify'
 import DynamicField from '../common/DynamicField'
+import CSVImport from '../common/CSVImport'
+import DOILookup from '../common/DOILookup'
 import toast from 'react-hot-toast'
 
 function formatDate(iso) {
@@ -17,7 +19,7 @@ function formatDate(iso) {
 }
 
 function isDuplicate(records, values, editingId) {
-  const keyFields = ['title', 'course_name', 'patent_number', 'student_name', 'event_name', 'training_name', 'project_title']
+  const keyFields = ['title','course_name','patent_number','student_name','event_name','training_name','project_title']
   const keyField  = keyFields.find(f => values[f])
   if (!keyField) return null
   const newVal = String(values[keyField]).toLowerCase().trim()
@@ -44,6 +46,7 @@ export default function TabForm() {
 
   useEffect(() => { setIsDirty(formDirty) }, [formDirty])
 
+  // Warn on close with unsaved changes
   useEffect(() => {
     if (!isDirty) return
     const fn = e => { e.preventDefault(); e.returnValue = '' }
@@ -51,6 +54,7 @@ export default function TabForm() {
     return () => window.removeEventListener('beforeunload', fn)
   }, [isDirty])
 
+  // Ctrl+S shortcut
   useEffect(() => {
     if (!showForm && !tab?.isProfile) return
     const fn = e => {
@@ -75,6 +79,7 @@ export default function TabForm() {
     finally { setLoading(false) }
   }
 
+  // ── Single-record save ──────────────────────────────────────
   async function onSubmit(values) {
     const dup = isDuplicate(records, values, editing)
     if (dup && !confirm(
@@ -95,29 +100,54 @@ export default function TabForm() {
         action = cur ? 'updated' : 'added'
         toast.success('Profile saved!')
       } else if (editing) {
-        const updated = await updateRecord(tab.id, session.userId, editing, payload)
-        setRecords(updated)
+        setRecords(await updateRecord(tab.id, session.userId, editing, payload))
         setEditing(null); setShowForm(false); reset()
         action = 'updated'
         toast.success('Record updated!')
       } else {
-        const updated = await addRecord(tab.id, session.userId, payload)
-        setRecords(updated)
+        setRecords(await addRecord(tab.id, session.userId, payload))
         setShowForm(false); reset()
         toast.success('Record saved!')
       }
 
       setIsDirty(false)
-
-      // Fire-and-forget email notification to tab owner
-      notifyAdmin({
-        tabId:       tab.id,
-        tabName:     tab.name,
-        facultyName: session.fullName,
-        action,
-      })
+      notifyAdmin({ tabId: tab.id, tabName: tab.name, facultyName: session.fullName, action })
     } catch (e) { toast.error('Save failed: ' + e.message) }
     finally { setSaving(false) }
+  }
+
+  // ── Bulk CSV import ─────────────────────────────────────────
+  // Called by CSVImport with an array of parsed row objects
+  async function handleCSVImport(rows) {
+    // Save rows one by one (GitHub API requires sequential writes)
+    let saved = 0
+    let currentRecords = records
+
+    for (const row of rows) {
+      const payload = { ...row, facultyName: session.fullName }
+      try {
+        currentRecords = await addRecord(tab.id, session.userId, payload)
+        saved++
+      } catch (e) {
+        toast.error(`Row ${saved + 1} failed: ${e.message}`)
+        break
+      }
+    }
+
+    setRecords(currentRecords)
+    toast.success(`✅ Imported ${saved} of ${rows.length} rows!`)
+    notifyAdmin({
+      tabId: tab.id, tabName: tab.name,
+      facultyName: session.fullName,
+      action: `bulk-imported ${saved} records via CSV`,
+    })
+  }
+
+  // ── DOI auto-fill (tab5 Publications) ──────────────────────
+  function handleDOIFill(fields) {
+    Object.entries(fields).forEach(([key, val]) => {
+      setValue(key, val, { shouldDirty: true })
+    })
   }
 
   async function handleDelete(id) {
@@ -147,9 +177,12 @@ export default function TabForm() {
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
+
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 mb-6 text-sm">
-        <Link to="/faculty" className="text-gray-400 hover:text-pdeu-blue dark:hover:text-blue-400">← Dashboard</Link>
+        <Link to="/faculty" className="text-gray-400 hover:text-pdeu-blue dark:hover:text-blue-400">
+          ← Dashboard
+        </Link>
         <span className="text-gray-300 dark:text-gray-600">/</span>
         <h1 className="font-bold text-pdeu-blue dark:text-white text-lg flex items-center gap-2">
           {tab.icon} {tab.name}
@@ -164,7 +197,7 @@ export default function TabForm() {
         </div>
       )}
 
-      {/* Unsaved changes */}
+      {/* Unsaved changes banner */}
       {isDirty && !saving && (
         <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg px-4 py-3 mb-4 text-sm text-amber-700 dark:text-amber-300 flex items-center gap-2">
           ⚠️ Unsaved changes —
@@ -173,17 +206,27 @@ export default function TabForm() {
         </div>
       )}
 
-      {/* Form */}
+      {/* ── CSV Bulk Import (all non-profile tabs) ── */}
+      {!tab.isProfile && (
+        <CSVImport tab={tab} onImport={handleCSVImport} disabled={saving} />
+      )}
+
+      {/* ── Add / Edit Form ── */}
       {(showForm || tab.isProfile) && (
         <div className="card mb-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold text-gray-800 dark:text-gray-100">
-              {editing ? '✏️ Edit Record' : tab.isProfile ? '📝 My Profile Info' : '➕ Add New Entry'}
+              {editing ? '✏️ Edit Record' : tab.isProfile ? '📝 My Profile Info' : '➕ Add Single Entry'}
             </h2>
             <p className="text-xs text-gray-400 dark:text-gray-500">
               <span className="text-red-500">*</span> Required
             </p>
           </div>
+
+          {/* DOI lookup — only for Publications tab */}
+          {tab.id === 'tab5' && !editing && (
+            <DOILookup onFill={handleDOIFill} />
+          )}
 
           <form onSubmit={handleSubmit(onSubmit)}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -206,12 +249,14 @@ export default function TabForm() {
                 or <kbd className="bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded font-mono text-xs">Ctrl+S</kbd>
               </span>
               {!tab.isProfile && (
-                <button type="button" onClick={cancelForm} className="btn-secondary ml-auto">Cancel</button>
+                <button type="button" onClick={cancelForm} className="btn-secondary ml-auto">
+                  Cancel
+                </button>
               )}
             </div>
           </form>
 
-          {/* Timestamps for profile tab */}
+          {/* Timestamps for profile */}
           {tab.isProfile && records[0] && (
             <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-700 text-xs text-gray-400 dark:text-gray-500 space-y-0.5">
               <p>📅 Created: {formatDate(records[0].createdAt)}</p>
@@ -221,14 +266,17 @@ export default function TabForm() {
         </div>
       )}
 
-      {/* Add button */}
+      {/* Add button (multi-record tabs) */}
       {!tab.isProfile && !showForm && (
-        <button onClick={() => { setEditing(null); reset(); setShowForm(true) }} className="btn-primary mb-6">
-          ➕ Add New Entry
+        <button
+          onClick={() => { setEditing(null); reset(); setShowForm(true) }}
+          className="btn-primary mb-6"
+        >
+          ➕ Add Single Entry
         </button>
       )}
 
-      {/* Records table */}
+      {/* ── Records Table ── */}
       {!tab.isProfile && (
         <div className="card">
           <h2 className="font-semibold text-gray-800 dark:text-gray-100 mb-4">
@@ -243,7 +291,7 @@ export default function TabForm() {
           ) : records.length === 0 ? (
             <div className="text-center py-10 text-gray-400 dark:text-gray-500">
               <p className="text-3xl mb-2">📭</p>
-              <p>No entries yet. Add your first one above.</p>
+              <p>No entries yet. Use "Add Single Entry" or "Bulk Import via CSV" above.</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -251,7 +299,8 @@ export default function TabForm() {
                 <thead>
                   <tr className="border-b border-gray-100 dark:border-gray-700">
                     {previewFields.map(f => (
-                      <th key={f.key} className="text-left px-3 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide whitespace-nowrap">
+                      <th key={f.key}
+                        className="text-left px-3 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide whitespace-nowrap">
                         {f.label}
                       </th>
                     ))}
@@ -266,7 +315,8 @@ export default function TabForm() {
                       className={`border-b border-gray-50 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50
                         ${idx % 2 === 1 ? 'bg-gray-50/40 dark:bg-gray-800/40' : ''}`}>
                       {previewFields.map(f => (
-                        <td key={f.key} className="px-3 py-2 text-gray-700 dark:text-gray-300 max-w-[160px] truncate"
+                        <td key={f.key}
+                          className="px-3 py-2 text-gray-700 dark:text-gray-300 max-w-[160px] truncate"
                           title={String(row[f.key] ?? '')}>
                           {row[f.key] ?? <span className="text-gray-300 dark:text-gray-600">—</span>}
                         </td>
@@ -280,9 +330,13 @@ export default function TabForm() {
                       <td className="px-3 py-2">
                         <div className="flex gap-3">
                           <button onClick={() => startEdit(row)}
-                            className="text-pdeu-blue hover:underline text-xs dark:text-blue-400">Edit</button>
+                            className="text-pdeu-blue dark:text-blue-400 hover:underline text-xs">
+                            Edit
+                          </button>
                           <button onClick={() => handleDelete(row.id)}
-                            className="text-red-400 hover:underline text-xs">Delete</button>
+                            className="text-red-400 hover:underline text-xs">
+                            Delete
+                          </button>
                         </div>
                       </td>
                     </tr>
