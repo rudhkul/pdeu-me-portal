@@ -25,8 +25,8 @@ export default function Layout({ children }) {
 
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden">
-      {/* Sidebar */}
       <aside className={`${open ? 'w-64' : 'w-16'} flex-shrink-0 bg-white border-r border-gray-100 flex flex-col transition-all duration-200 overflow-hidden`}>
+
         {/* Logo */}
         <div className="flex items-center gap-3 px-4 py-4 border-b border-gray-100 min-h-[64px]">
           <span className="text-2xl flex-shrink-0">🎓</span>
@@ -41,7 +41,7 @@ export default function Layout({ children }) {
           </button>
         </div>
 
-        {/* Nav links */}
+        {/* Nav */}
         <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-0.5">
           {isAdmin ? (
             <>
@@ -70,24 +70,36 @@ export default function Layout({ children }) {
           )}
         </nav>
 
-        {/* User footer */}
-        <div className="border-t border-gray-100 p-3 flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-pdeu-blue text-white text-xs flex items-center justify-center font-bold flex-shrink-0">
-            {session?.fullName?.[0]?.toUpperCase() || '?'}
-          </div>
-          {open && (
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-gray-800 truncate">{session?.fullName}</p>
-              <p className="text-xs text-gray-400 capitalize">{session?.role}</p>
+        {/* Footer */}
+        <div className="border-t border-gray-100 p-3 space-y-1">
+          {/* Change password link */}
+          <NavLink to="/change-password" className={({ isActive }) =>
+            `flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs transition-colors ${
+              isActive ? 'bg-pdeu-blue text-white' : 'text-gray-400 hover:text-pdeu-blue hover:bg-pdeu-light'
+            }`
+          }>
+            <span>🔒</span>{open && 'Change Password'}
+          </NavLink>
+
+          {/* User info + sign out */}
+          <div className="flex items-center gap-2 px-1 pt-1">
+            <div className="w-8 h-8 rounded-full bg-pdeu-blue text-white text-xs flex items-center justify-center font-bold flex-shrink-0">
+              {session?.fullName?.[0]?.toUpperCase() || '?'}
             </div>
-          )}
-          <button onClick={handleSignOut} title="Sign out" className="text-gray-300 hover:text-red-400 ml-auto flex-shrink-0 text-sm">
-            ⏻
-          </button>
+            {open && (
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-gray-800 truncate">{session?.fullName}</p>
+                <p className="text-xs text-gray-400 capitalize">{session?.role}</p>
+              </div>
+            )}
+            <button onClick={handleSignOut} title="Sign out" className="text-gray-300 hover:text-red-400 ml-auto flex-shrink-0 text-sm">
+              ⏻
+            </button>
+          </div>
         </div>
+
       </aside>
 
-      {/* Page content */}
       <main className="flex-1 overflow-y-auto">{children}</main>
     </div>
   )

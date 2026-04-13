@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './hooks/useAuth'
 import ProtectedRoute from './components/ProtectedRoute'
 import Layout from './components/Layout'
 import Login from './components/Login'
+import ChangePassword from './components/ChangePassword'
 import FacultyDashboard from './components/faculty/FacultyDashboard'
 import TabForm from './components/faculty/TabForm'
 import AdminDashboard from './components/admin/AdminDashboard'
@@ -25,6 +26,12 @@ export default function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/" element={<RootRedirect />} />
+
+          <Route path="/change-password" element={
+            <ProtectedRoute>
+              <Layout><ChangePassword /></Layout>
+            </ProtectedRoute>
+          } />
 
           <Route path="/faculty" element={<ProtectedRoute requiredRole="faculty"><Layout><FacultyDashboard /></Layout></ProtectedRoute>} />
           <Route path="/faculty/tab/:tabId" element={<ProtectedRoute requiredRole="faculty"><Layout><TabForm /></Layout></ProtectedRoute>} />
