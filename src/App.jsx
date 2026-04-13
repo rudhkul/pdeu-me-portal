@@ -10,6 +10,8 @@ import TabForm from './components/faculty/TabForm'
 import AdminDashboard from './components/admin/AdminDashboard'
 import DataViewer from './components/admin/DataViewer'
 import ExportBuilder from './components/admin/ExportBuilder'
+import AdminUsers from './components/admin/AdminUsers'
+import DeadlineManager from './components/admin/DeadlineManager'
 
 function RootRedirect() {
   const { session, loading } = useAuth()
@@ -18,27 +20,29 @@ function RootRedirect() {
   return <Navigate to={session.role === 'admin' ? '/admin' : '/faculty'} replace />
 }
 
+const Faculty = (el) => <ProtectedRoute requiredRole="faculty"><Layout>{el}</Layout></ProtectedRoute>
+const Admin   = (el) => <ProtectedRoute requiredRole="admin"><Layout>{el}</Layout></ProtectedRoute>
+const Any     = (el) => <ProtectedRoute><Layout>{el}</Layout></ProtectedRoute>
+
 export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter basename="/pdeu-me-portal">
         <Toaster position="top-right" toastOptions={{ duration: 3500, style: { fontSize: '14px', borderRadius: '10px' } }} />
         <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/" element={<RootRedirect />} />
+          <Route path="/login"  element={<Login />} />
+          <Route path="/"       element={<RootRedirect />} />
 
-          <Route path="/change-password" element={
-            <ProtectedRoute>
-              <Layout><ChangePassword /></Layout>
-            </ProtectedRoute>
-          } />
+          <Route path="/change-password"  element={Any(<ChangePassword />)} />
 
-          <Route path="/faculty" element={<ProtectedRoute requiredRole="faculty"><Layout><FacultyDashboard /></Layout></ProtectedRoute>} />
-          <Route path="/faculty/tab/:tabId" element={<ProtectedRoute requiredRole="faculty"><Layout><TabForm /></Layout></ProtectedRoute>} />
+          <Route path="/faculty"              element={Faculty(<FacultyDashboard />)} />
+          <Route path="/faculty/tab/:tabId"   element={Faculty(<TabForm />)} />
 
-          <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><Layout><AdminDashboard /></Layout></ProtectedRoute>} />
-          <Route path="/admin/tab/:tabId" element={<ProtectedRoute requiredRole="admin"><Layout><DataViewer /></Layout></ProtectedRoute>} />
-          <Route path="/admin/export" element={<ProtectedRoute requiredRole="admin"><Layout><ExportBuilder /></Layout></ProtectedRoute>} />
+          <Route path="/admin"                element={Admin(<AdminDashboard />)} />
+          <Route path="/admin/tab/:tabId"     element={Admin(<DataViewer />)} />
+          <Route path="/admin/export"         element={Admin(<ExportBuilder />)} />
+          <Route path="/admin/users"          element={Admin(<AdminUsers />)} />
+          <Route path="/admin/deadline"       element={Admin(<DeadlineManager />)} />
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

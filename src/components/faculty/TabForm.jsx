@@ -1,26 +1,33 @@
 import { useEffect, useState, useCallback } from 'react'
-import { useParams, Link, useNavigate } from 'react-router-dom'
+import { useParams, Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { useAuth } from '../../hooks/useAuth'
 import { getTab } from '../../config/tabs'
-import {
-  getFacultyRecords, addRecord, updateRecord, deleteRecord,
-} from '../../lib/github'
+import { getFacultyRecords, addRecord, updateRecord, deleteRecord } from '../../lib/github'
 import DynamicField from '../common/DynamicField'
 import toast from 'react-hot-toast'
 
 function formatDate(iso) {
   if (!iso) return '—'
-  return new Date(iso).toLocaleString('en-IN', {
-    day: '2-digit', month: 'short', year: 'numeric',
-    hour: '2-digit', minute: '2-digit',
-  })
+  return new Date(iso).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+}
+
+// Check for likely duplicate entries based on key text field
+function isDuplicate(records, values, editingId) {
+  const keyFields = ['title', 'course_name', 'patent_number', 'student_name', 'event_name', 'training_name', 'project_title']
+  const keyField  = keyFields.find(f => values[f])
+  if (!keyField) return null
+  const newVal = String(values[keyField]).toLowerCase().trim()
+  return records.find(r =>
+    r.id !== editingId &&
+    r[keyField] &&
+    String(r[keyField]).toLowerCase().trim() === newVal
+  )
 }
 
 export default function TabForm() {
   const { tabId }    = useParams()
   const { session }  = useAuth()
-  const navigate     = useNavigate()
   const tab          = getTab(tabId)
 
   const [records,  setRecords]  = useState([])
@@ -30,22 +37,30 @@ export default function TabForm() {
   const [saving,   setSaving]   = useState(false)
   const [isDirty,  setIsDirty]  = useState(false)
 
-  const { register, handleSubmit, reset, watch, setValue,
-          formState: { errors, isDirty: formDirty } } = useForm()
+  const { register, handleSubmit, reset, watch, setValue, formState: { errors, isDirty: formDirty } } = useForm()
 
-  // Track form dirtiness for unsaved-changes warning
   useEffect(() => { setIsDirty(formDirty) }, [formDirty])
 
-  // Warn before navigating away with unsaved changes
+  // Warn on browser close
   useEffect(() => {
     if (!isDirty) return
-    function onBeforeUnload(e) {
-      e.preventDefault()
-      e.returnValue = ''
-    }
-    window.addEventListener('beforeunload', onBeforeUnload)
-    return () => window.removeEventListener('beforeunload', onBeforeUnload)
+    const fn = e => { e.preventDefault(); e.returnValue = '' }
+    window.addEventListener('beforeunload', fn)
+    return () => window.removeEventListener('beforeunload', fn)
   }, [isDirty])
+
+  // Keyboard shortcut: Ctrl+S / Cmd+S to save
+  useEffect(() => {
+    if (!showForm && !tab?.isProfile) return
+    function onKeyDown(e) {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault()
+        document.getElementById('tab-form-submit')?.click()
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [showForm, tab])
 
   useEffect(() => { if (tab) fetchRecords() }, [tabId])
 
@@ -55,149 +70,109 @@ export default function TabForm() {
       const data = await getFacultyRecords(tab.id, session.userId)
       setRecords(data)
       if (tab.isProfile && data.length > 0) reset(data[0])
-    } catch (e) {
-      toast.error('Failed to load records: ' + e.message)
-    } finally {
-      setLoading(false)
-    }
+    } catch (e) { toast.error('Failed to load: ' + e.message) }
+    finally { setLoading(false) }
   }
 
   async function onSubmit(values) {
+    // Duplicate detection
+    const dup = isDuplicate(records, values, editing)
+    if (dup && !confirm(`A similar entry already exists:\n"${dup.title || dup.course_name || dup.event_name || dup.student_name}"\n\nAdd anyway?`)) return
+
     setSaving(true)
     try {
       const payload = { ...values, facultyName: session.fullName }
-
       if (tab.isProfile) {
-        const current = records[0]
-        if (current) {
-          const updated = await updateRecord(tab.id, session.userId, current.id, payload)
-          setRecords(updated)
-        } else {
-          const updated = await addRecord(tab.id, session.userId, payload)
-          setRecords(updated)
-        }
+        const cur = records[0]
+        const updated = cur
+          ? await updateRecord(tab.id, session.userId, cur.id, payload)
+          : await addRecord(tab.id, session.userId, payload)
+        setRecords(updated)
         toast.success('Profile saved!')
       } else if (editing) {
         const updated = await updateRecord(tab.id, session.userId, editing, payload)
         setRecords(updated)
-        setEditing(null)
-        setShowForm(false)
-        reset()
+        setEditing(null); setShowForm(false); reset()
         toast.success('Record updated!')
       } else {
         const updated = await addRecord(tab.id, session.userId, payload)
         setRecords(updated)
-        setShowForm(false)
-        reset()
+        setShowForm(false); reset()
         toast.success('Record saved!')
       }
       setIsDirty(false)
-    } catch (e) {
-      toast.error('Save failed: ' + e.message)
-    } finally {
-      setSaving(false)
-    }
+    } catch (e) { toast.error('Save failed: ' + e.message) }
+    finally { setSaving(false) }
   }
 
   function startEdit(row) {
-    setEditing(row.id)
-    reset(row)
-    setShowForm(true)
+    setEditing(row.id); reset(row); setShowForm(true)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   async function handleDelete(id) {
-    if (!confirm('Delete this record? This cannot be undone.')) return
+    if (!confirm('Delete this record? Cannot be undone.')) return
     try {
-      const updated = await deleteRecord(tab.id, session.userId, id)
-      setRecords(updated)
+      setRecords(await deleteRecord(tab.id, session.userId, id))
       toast.success('Deleted')
-    } catch (e) {
-      toast.error('Delete failed: ' + e.message)
-    }
+    } catch (e) { toast.error(e.message) }
   }
 
   function cancelForm() {
-    if (isDirty && !confirm('You have unsaved changes. Discard them?')) return
-    reset()
-    setEditing(null)
-    setShowForm(false)
-    setIsDirty(false)
+    if (isDirty && !confirm('Discard unsaved changes?')) return
+    reset(); setEditing(null); setShowForm(false); setIsDirty(false)
   }
 
   if (!tab) return <div className="p-8 text-center text-gray-500">Tab not found.</div>
 
-  const previewFields = tab.fields
-    .filter(f => !['file', 'textarea', 'boolean'].includes(f.type))
-    .slice(0, 4)
+  const previewFields = tab.fields.filter(f => !['file','textarea','boolean'].includes(f.type)).slice(0, 4)
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
-      {/* Breadcrumb */}
       <div className="flex items-center gap-2 mb-6 text-sm">
         <Link to="/faculty" className="text-gray-400 hover:text-pdeu-blue">← Dashboard</Link>
         <span className="text-gray-300">/</span>
-        <h1 className="font-bold text-pdeu-blue flex items-center gap-2 text-lg">
-          {tab.icon} {tab.name}
-        </h1>
+        <h1 className="font-bold text-pdeu-blue text-lg flex items-center gap-2">{tab.icon} {tab.name}</h1>
       </div>
 
-      {/* Saving indicator */}
       {saving && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 mb-4 text-sm text-blue-700 flex items-center gap-2">
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 rounded-lg px-4 py-3 mb-4 text-sm text-blue-700 dark:text-blue-300 flex items-center gap-2">
           <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-          Saving to repository… this takes a few seconds.
+          Saving to repository…
         </div>
       )}
-
-      {/* Unsaved changes banner */}
       {isDirty && !saving && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 mb-4 text-sm text-amber-700 flex items-center gap-2">
-          ⚠️ You have unsaved changes.
+        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 rounded-lg px-4 py-3 mb-4 text-sm text-amber-700 dark:text-amber-300">
+          ⚠️ Unsaved changes — press <kbd className="bg-amber-100 dark:bg-amber-800 px-1.5 py-0.5 rounded text-xs font-mono">Ctrl+S</kbd> to save quickly.
         </div>
       )}
 
-      {/* Form */}
       {(showForm || tab.isProfile) && (
         <div className="card mb-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-gray-800">
+            <h2 className="font-semibold text-gray-800 dark:text-gray-100">
               {editing ? '✏️ Edit Record' : tab.isProfile ? '📝 My Profile Info' : '➕ Add New Entry'}
             </h2>
-            {/* Required field legend */}
-            <p className="text-xs text-gray-400"><span className="text-red-500">*</span> Required fields</p>
+            <p className="text-xs text-gray-400"><span className="text-red-500">*</span> Required</p>
           </div>
-
           <form onSubmit={handleSubmit(onSubmit)}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {tab.fields.map(field => (
-                <div key={field.key}
-                  className={['textarea', 'file', 'url'].includes(field.type) ? 'md:col-span-2' : ''}
-                >
-                  <DynamicField
-                    field={field}
-                    register={register}
-                    watch={watch}
-                    setValue={setValue}
-                    errors={errors}
-                  />
+                <div key={field.key} className={['textarea','file','url'].includes(field.type) ? 'md:col-span-2' : ''}>
+                  <DynamicField field={field} register={register} watch={watch} setValue={setValue} errors={errors} />
                 </div>
               ))}
             </div>
-
-            <div className="flex gap-3 mt-6 pt-4 border-t border-gray-100">
-              <button type="submit" className="btn-primary" disabled={saving}>
+            <div className="flex gap-3 mt-6 pt-4 border-t border-gray-100 dark:border-gray-700">
+              <button id="tab-form-submit" type="submit" className="btn-primary" disabled={saving}>
                 {saving ? '⏳ Saving…' : editing ? '💾 Update' : '💾 Save'}
               </button>
-              {!tab.isProfile && (
-                <button type="button" onClick={cancelForm} className="btn-secondary">Cancel</button>
-              )}
+              <span className="text-xs text-gray-400 self-center">or <kbd className="bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded font-mono">Ctrl+S</kbd></span>
+              {!tab.isProfile && <button type="button" onClick={cancelForm} className="btn-secondary ml-auto">Cancel</button>}
             </div>
           </form>
-
-          {/* Last updated info for profile tab */}
           {tab.isProfile && records[0] && (
-            <div className="mt-4 pt-3 border-t border-gray-100 text-xs text-gray-400 space-y-0.5">
+            <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-700 text-xs text-gray-400 space-y-0.5">
               <p>📅 Created: {formatDate(records[0].createdAt)}</p>
               <p>🔄 Last updated: {formatDate(records[0].updatedAt || records[0].createdAt)}</p>
             </div>
@@ -205,48 +180,42 @@ export default function TabForm() {
         </div>
       )}
 
-      {/* Add button */}
       {!tab.isProfile && !showForm && (
         <button onClick={() => { setEditing(null); reset(); setShowForm(true) }} className="btn-primary mb-6">
           ➕ Add New Entry
         </button>
       )}
 
-      {/* Records table */}
       {!tab.isProfile && (
         <div className="card">
-          <h2 className="font-semibold text-gray-800 mb-4">My Entries ({records.length})</h2>
-
+          <h2 className="font-semibold text-gray-800 dark:text-gray-100 mb-4">My Entries ({records.length})</h2>
           {loading ? (
             <div className="text-center py-10 text-gray-400">
               <div className="w-8 h-8 border-2 border-pdeu-blue border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-              Loading from repository…
+              Loading…
             </div>
           ) : records.length === 0 ? (
             <div className="text-center py-10 text-gray-400">
-              <p className="text-3xl mb-2">📭</p>
-              <p>No entries yet. Add your first one above.</p>
+              <p className="text-3xl mb-2">📭</p><p>No entries yet.</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-gray-100">
+                  <tr className="border-b border-gray-100 dark:border-gray-700">
                     {previewFields.map(f => (
-                      <th key={f.key} className="text-left px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">
-                        {f.label}
-                      </th>
+                      <th key={f.key} className="text-left px-3 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide whitespace-nowrap">{f.label}</th>
                     ))}
-                    <th className="text-left px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">Added</th>
-                    <th className="text-left px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">Updated</th>
-                    <th className="px-3 py-2" />
+                    <th className="text-left px-3 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Added</th>
+                    <th className="text-left px-3 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Updated</th>
+                    <th />
                   </tr>
                 </thead>
                 <tbody>
                   {records.map(row => (
-                    <tr key={row.id} className="border-b border-gray-50 hover:bg-gray-50">
+                    <tr key={row.id} className="border-b border-gray-50 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">
                       {previewFields.map(f => (
-                        <td key={f.key} className="px-3 py-2 text-gray-700 max-w-[160px] truncate" title={String(row[f.key] ?? '')}>
+                        <td key={f.key} className="px-3 py-2 text-gray-700 dark:text-gray-300 max-w-[160px] truncate" title={String(row[f.key] ?? '')}>
                           {row[f.key] ?? <span className="text-gray-300">—</span>}
                         </td>
                       ))}

@@ -1,70 +1,161 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
-import { getFacultyRecords } from '../../lib/github'
+import { getFacultyRecords, getSettings } from '../../lib/github'
 import { TABS } from '../../config/tabs'
 
+function DeadlineBanner({ deadline, message }) {
+  if (!deadline) return null
+  const daysLeft = Math.ceil((new Date(deadline) - new Date()) / 86400000)
+  const isPast   = daysLeft < 0
+  const isUrgent = daysLeft >= 0 && daysLeft <= 7
+
+  const cls = isPast
+    ? 'bg-red-50 dark:bg-red-900/20 border-red-300 text-red-700 dark:text-red-300'
+    : isUrgent
+    ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-300 text-amber-700 dark:text-amber-300'
+    : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 text-blue-700 dark:text-blue-300'
+
+  return (
+    <div className={`border rounded-xl px-4 py-3 mb-6 flex flex-wrap items-center gap-3 ${cls}`}>
+      <span className="text-lg">{isPast ? '⚠️' : isUrgent ? '⏰' : '📅'}</span>
+      <div className="flex-1 min-w-0">
+        <p className="font-semibold text-sm">
+          {isPast
+            ? `Data collection deadline passed ${Math.abs(daysLeft)} day${Math.abs(daysLeft) !== 1 ? 's' : ''} ago`
+            : daysLeft === 0
+            ? 'Deadline is TODAY — please submit now!'
+            : `${daysLeft} day${daysLeft !== 1 ? 's' : ''} remaining until submission deadline`
+          }
+          {' · '}
+          <span className="font-normal">{new Date(deadline).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+        </p>
+        {message && <p className="text-xs mt-0.5 opacity-80">{message}</p>}
+      </div>
+    </div>
+  )
+}
+
 export default function FacultyDashboard() {
-  const { session }  = useAuth()
-  const [counts, setCounts] = useState({})
-  const [loading, setLoading] = useState(true)
+  const { session } = useAuth()
+  const [counts,   setCounts]   = useState({})
+  const [loading,  setLoading]  = useState(true)
+  const [deadline, setDeadline] = useState(null)
+  const [message,  setMessage]  = useState('')
 
   useEffect(() => {
     async function load() {
-      // Fetch record counts for all tabs in parallel
-      const entries = await Promise.all(
-        TABS.map(async tab => {
+      const [settingsRes, countResults] = await Promise.all([
+        getSettings().catch(() => ({})),
+        Promise.all(TABS.map(async tab => {
           try {
             const records = await getFacultyRecords(tab.id, session.userId)
             return [tab.id, records.length]
-          } catch {
-            return [tab.id, 0]
-          }
-        })
-      )
-      setCounts(Object.fromEntries(entries))
+          } catch { return [tab.id, 0] }
+        }))
+      ])
+      setDeadline(settingsRes.deadline || null)
+      setMessage(settingsRes.message || '')
+      setCounts(Object.fromEntries(countResults))
       setLoading(false)
     }
     load()
   }, [])
 
-  const totalEntries = Object.values(counts).reduce((s, v) => s + v, 0)
+  const filledTabs = Object.values(counts).filter(c => c > 0).length
+  const totalTabs  = TABS.length
+  const pct        = Math.round((filledTabs / totalTabs) * 100)
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
-      <div className="mb-8">
+      {/* Header */}
+      <div className="mb-6">
         <h1 className="text-2xl font-bold text-pdeu-blue">Welcome, {session?.fullName} 👋</h1>
-        <p className="text-gray-500 mt-1">
-          {loading ? 'Loading your data…' : `${totalEntries} total entries across all tabs`}
+        <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">
+          {loading ? 'Loading your data…' : `${filledTabs} of ${totalTabs} sections have entries`}
         </p>
       </div>
 
+      {/* Deadline banner */}
+      <DeadlineBanner deadline={deadline} message={message} />
+
+      {/* Completion tracker */}
+      <div className="card mb-6">
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <p className="font-semibold text-gray-800 dark:text-gray-100">Data Completion</p>
+            <p className="text-xs text-gray-400 mt-0.5">{filledTabs} / {totalTabs} sections filled</p>
+          </div>
+          <span className={`text-2xl font-bold ${pct === 100 ? 'text-green-600' : pct >= 50 ? 'text-amber-500' : 'text-red-500'}`}>
+            {loading ? '…' : `${pct}%`}
+          </span>
+        </div>
+
+        {/* Progress bar */}
+        <div className="h-3 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+          <div
+            className={`h-full rounded-full transition-all duration-500 ${pct === 100 ? 'bg-green-500' : pct >= 50 ? 'bg-amber-400' : 'bg-pdeu-blue'}`}
+            style={{ width: loading ? '0%' : `${pct}%` }}
+          />
+        </div>
+
+        {/* Mini tab status grid */}
+        {!loading && (
+          <div className="flex flex-wrap gap-1.5 mt-4">
+            {TABS.map(tab => (
+              <Link
+                key={tab.id}
+                to={`/faculty/tab/${tab.id}`}
+                title={`${tab.name} — ${counts[tab.id] || 0} entries`}
+                className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold transition-colors
+                  ${(counts[tab.id] || 0) > 0
+                    ? 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400'
+                    : 'bg-gray-100 text-gray-400 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-500'
+                  }`}
+              >
+                {tab.number}
+              </Link>
+            ))}
+          </div>
+        )}
+        <p className="text-xs text-gray-400 mt-2">
+          <span className="inline-block w-3 h-3 bg-green-100 dark:bg-green-900/30 rounded mr-1 align-middle" />filled
+          <span className="inline-block w-3 h-3 bg-gray-100 dark:bg-gray-700 rounded ml-3 mr-1 align-middle" />empty
+        </p>
+      </div>
+
+      {/* Tab cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {TABS.map(tab => (
-          <Link
-            key={tab.id}
-            to={`/faculty/tab/${tab.id}`}
-            className="card hover:shadow-md hover:border-pdeu-blue transition-all group"
-          >
-            <div className="flex items-start gap-3">
-              <span className="text-2xl">{tab.icon}</span>
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-gray-800 text-sm group-hover:text-pdeu-blue leading-tight">
-                  {tab.number}. {tab.name}
-                </p>
-                <p className="text-xs text-gray-400 mt-1 line-clamp-2">{tab.description}</p>
+        {TABS.map(tab => {
+          const count = counts[tab.id] || 0
+          const filled = count > 0
+          return (
+            <Link key={tab.id} to={`/faculty/tab/${tab.id}`}
+              className={`card hover:shadow-md transition-all group border-l-4
+                ${filled ? 'border-l-green-400' : 'border-l-gray-200 dark:border-l-gray-600'}`}
+            >
+              <div className="flex items-start gap-3">
+                <span className="text-2xl">{tab.icon}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-gray-800 dark:text-gray-100 text-sm group-hover:text-pdeu-blue leading-tight">
+                    {tab.number}. {tab.name}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1 line-clamp-2">{tab.description}</p>
+                </div>
               </div>
-            </div>
-            <div className="mt-3 flex items-center justify-between">
-              <span className="text-xs bg-pdeu-light text-pdeu-blue px-2 py-0.5 rounded-full font-medium">
-                {loading ? '…' : `${counts[tab.id] ?? 0} ${tab.isProfile ? 'record' : 'entries'}`}
-              </span>
-              <span className="text-pdeu-blue text-xs opacity-0 group-hover:opacity-100 transition-opacity font-medium">
-                Open →
-              </span>
-            </div>
-          </Link>
-        ))}
+              <div className="mt-3 flex items-center justify-between">
+                <span className={`text-xs px-2 py-0.5 rounded-full font-medium
+                  ${filled
+                    ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                    : 'bg-gray-100 text-gray-400 dark:bg-gray-700'
+                  }`}>
+                  {loading ? '…' : filled ? `${count} ${tab.isProfile ? 'record' : 'entries'}` : 'No entries yet'}
+                </span>
+                <span className="text-pdeu-blue text-xs opacity-0 group-hover:opacity-100 transition-opacity font-medium">Open →</span>
+              </div>
+            </Link>
+          )
+        })}
       </div>
     </div>
   )
