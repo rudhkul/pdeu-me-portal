@@ -4,6 +4,31 @@ import { useAuth } from '../../hooks/useAuth'
 import { getFacultyRecords, getSettings } from '../../lib/github'
 import { TABS } from '../../config/tabs'
 
+function OnboardingBanner({ filledTabs, onDismiss }) {
+  if (filledTabs > 0) return null   // Already started — no need to show
+  return (
+    <div className="bg-pdeu-light dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 mb-6 flex flex-wrap gap-4 items-start">
+      <span className="text-2xl">👋</span>
+      <div className="flex-1 min-w-0">
+        <p className="font-semibold text-pdeu-blue dark:text-blue-300">Welcome to the ME Department Data Portal!</p>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+          Please fill in your data across all 20 sections. Here's how to get started:
+        </p>
+        <ol className="text-sm text-gray-600 dark:text-gray-400 mt-2 space-y-1 list-decimal list-inside">
+          <li>Start with <strong className="text-gray-700 dark:text-gray-300">Tab 1 — Faculty Information</strong> (your profile)</li>
+          <li>Work through each tab and add all relevant entries</li>
+          <li>For file attachments, upload to OneDrive and paste the sharing link</li>
+          <li>You can save, edit, and come back anytime — progress is always saved</li>
+        </ol>
+      </div>
+      <button onClick={onDismiss}
+        className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-sm flex-shrink-0">
+        ✕ Dismiss
+      </button>
+    </div>
+  )
+}
+
 function DeadlineBanner({ deadline, message }) {
   if (!deadline) return null
   const daysLeft = Math.ceil((new Date(deadline) - new Date()) / 86400000)
@@ -38,6 +63,13 @@ function DeadlineBanner({ deadline, message }) {
 
 export default function FacultyDashboard() {
   const { session } = useAuth()
+  const [showOnboarding, setShowOnboarding] = useState(
+    () => !localStorage.getItem('onboarding_dismissed')
+  )
+  function dismissOnboarding() {
+    localStorage.setItem('onboarding_dismissed', '1')
+    setShowOnboarding(false)
+  }
   const [counts,   setCounts]   = useState({})
   const [loading,  setLoading]  = useState(true)
   const [deadline, setDeadline] = useState(null)
@@ -75,6 +107,11 @@ export default function FacultyDashboard() {
           {loading ? 'Loading your data…' : `${filledTabs} of ${totalTabs} sections have entries`}
         </p>
       </div>
+
+      {/* Onboarding banner — shown only on first visit */}
+      {showOnboarding && (
+        <OnboardingBanner filledTabs={filledTabs} onDismiss={dismissOnboarding} />
+      )}
 
       {/* Deadline banner */}
       <DeadlineBanner deadline={deadline} message={message} />

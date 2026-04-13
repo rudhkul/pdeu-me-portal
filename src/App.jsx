@@ -12,6 +12,7 @@ import DataViewer from './components/admin/DataViewer'
 import ExportBuilder from './components/admin/ExportBuilder'
 import AdminUsers from './components/admin/AdminUsers'
 import DeadlineManager from './components/admin/DeadlineManager'
+import NotificationSettings from './components/admin/NotificationSettings'
 
 function RootRedirect() {
   const { session, loading } = useAuth()
@@ -20,29 +21,37 @@ function RootRedirect() {
   return <Navigate to={session.role === 'admin' ? '/admin' : '/faculty'} replace />
 }
 
-const Faculty = (el) => <ProtectedRoute requiredRole="faculty"><Layout>{el}</Layout></ProtectedRoute>
-const Admin   = (el) => <ProtectedRoute requiredRole="admin"><Layout>{el}</Layout></ProtectedRoute>
-const Any     = (el) => <ProtectedRoute><Layout>{el}</Layout></ProtectedRoute>
+const Faculty = el => <ProtectedRoute requiredRole="faculty"><Layout>{el}</Layout></ProtectedRoute>
+const Admin   = el => <ProtectedRoute requiredRole="admin"><Layout>{el}</Layout></ProtectedRoute>
+const Any     = el => <ProtectedRoute><Layout>{el}</Layout></ProtectedRoute>
 
 export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter basename="/pdeu-me-portal">
-        <Toaster position="top-right" toastOptions={{ duration: 3500, style: { fontSize: '14px', borderRadius: '10px' } }} />
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            duration: 3500,
+            style: { fontSize: '14px', borderRadius: '10px' },
+            className: 'dark:bg-gray-800 dark:text-white',
+          }}
+        />
         <Routes>
-          <Route path="/login"  element={<Login />} />
-          <Route path="/"       element={<RootRedirect />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/"     element={<RootRedirect />} />
 
-          <Route path="/change-password"  element={Any(<ChangePassword />)} />
+          <Route path="/change-password" element={Any(<ChangePassword />)} />
 
-          <Route path="/faculty"              element={Faculty(<FacultyDashboard />)} />
-          <Route path="/faculty/tab/:tabId"   element={Faculty(<TabForm />)} />
+          <Route path="/faculty"            element={Faculty(<FacultyDashboard />)} />
+          <Route path="/faculty/tab/:tabId" element={Faculty(<TabForm />)} />
 
-          <Route path="/admin"                element={Admin(<AdminDashboard />)} />
-          <Route path="/admin/tab/:tabId"     element={Admin(<DataViewer />)} />
-          <Route path="/admin/export"         element={Admin(<ExportBuilder />)} />
-          <Route path="/admin/users"          element={Admin(<AdminUsers />)} />
-          <Route path="/admin/deadline"       element={Admin(<DeadlineManager />)} />
+          <Route path="/admin"                  element={Admin(<AdminDashboard />)} />
+          <Route path="/admin/tab/:tabId"       element={Admin(<DataViewer />)} />
+          <Route path="/admin/export"           element={Admin(<ExportBuilder />)} />
+          <Route path="/admin/users"            element={Admin(<AdminUsers />)} />
+          <Route path="/admin/deadline"         element={Admin(<DeadlineManager />)} />
+          <Route path="/admin/notifications"    element={Admin(<NotificationSettings />)} />
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

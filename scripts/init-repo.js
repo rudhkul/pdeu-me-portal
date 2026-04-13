@@ -122,7 +122,16 @@ async function main() {
   await writeFile('users.json', newUsers, usersExist ? usersSha : null)
   console.log('\n✅  users.json saved\n')
 
-  // ── Step 4: Create placeholder record files for each tab ──────
+  // ── Step 4: Create meta/settings.json ────────────────────────
+  const { exists: metaExists } = await fileExists('meta/settings.json')
+  if (!metaExists) {
+    await writeFile('meta/settings.json', { deadline: '', message: '' })
+    console.log('✅  Created meta/settings.json\n')
+  } else {
+    console.log('⏭  meta/settings.json already exists\n')
+  }
+
+  // ── Step 5: Create placeholder record files for each tab ──────
   console.log('📁  Creating tab record directories…')
   for (const tabId of TAB_IDS) {
     await createPlaceholder(`records/${tabId}/.gitkeep`)

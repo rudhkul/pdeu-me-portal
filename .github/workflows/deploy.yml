@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -26,10 +26,18 @@ jobs:
       - run: npm ci
       - name: Build
         env:
-          VITE_DATA_REPO_OWNER: ${{ secrets.VITE_DATA_REPO_OWNER }}
-          VITE_DATA_REPO_NAME:  ${{ secrets.VITE_DATA_REPO_NAME }}
-          VITE_GITHUB_PAT:      ${{ secrets.VITE_GITHUB_PAT }}
-          VITE_AUTH_SECRET:     ${{ secrets.VITE_AUTH_SECRET }}
+          VITE_DATA_REPO_OWNER:          ${{ secrets.VITE_DATA_REPO_OWNER }}
+          VITE_DATA_REPO_NAME:           ${{ secrets.VITE_DATA_REPO_NAME }}
+          VITE_GITHUB_PAT:               ${{ secrets.VITE_GITHUB_PAT }}
+          VITE_AUTH_SECRET:              ${{ secrets.VITE_AUTH_SECRET }}
+          VITE_EMAILJS_SERVICE_ID:       ${{ secrets.VITE_EMAILJS_SERVICE_ID }}
+          VITE_EMAILJS_TEMPLATE_ID:      ${{ secrets.VITE_EMAILJS_TEMPLATE_ID }}
+          VITE_EMAILJS_PUBLIC_KEY:       ${{ secrets.VITE_EMAILJS_PUBLIC_KEY }}
+          VITE_ADMIN_EMAIL_Salman:       ${{ secrets.VITE_ADMIN_EMAIL_Salman }}
+          VITE_ADMIN_EMAIL_Krunal:       ${{ secrets.VITE_ADMIN_EMAIL_Krunal }}
+          VITE_ADMIN_EMAIL_VivekJaiswal: ${{ secrets.VITE_ADMIN_EMAIL_VivekJaiswal }}
+          VITE_ADMIN_EMAIL_Anirudh:      ${{ secrets.VITE_ADMIN_EMAIL_Anirudh }}
+          VITE_ADMIN_EMAIL_Abhinaya:     ${{ secrets.VITE_ADMIN_EMAIL_Abhinaya }}
         run: npm run build
       - uses: actions/upload-pages-artifact@v3
         with:

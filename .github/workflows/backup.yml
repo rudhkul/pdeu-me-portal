@@ -1,0 +1,72 @@
+name: Weekly Data Backup
+
+on:
+  schedule:
+    # Every Sunday at 2:00 AM IST (8:30 PM Saturday UTC)
+    - cron: '30 20 * * 0'
+  workflow_dispatch:   # allow manual trigger from Actions tab
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout data repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.VITE_DATA_REPO_OWNER }}/${{ secrets.VITE_DATA_REPO_NAME }}
+          token: ${{ secrets.VITE_GITHUB_PAT }}
+          path: data-repo
+
+      - name: Create timestamped backup archive
+        run: |
+          TIMESTAMP=$(date +"%Y-%m-%d")
+          cd data-repo
+          tar -czf "../pdeu-me-backup-${TIMESTAMP}.tar.gz" \
+            users.json records/ meta/ \
+            --exclude="*.gitkeep" \
+            2>/dev/null || true
+          echo "BACKUP_FILE=pdeu-me-backup-${TIMESTAMP}.tar.gz" >> $GITHUB_ENV
+          echo "TIMESTAMP=${TIMESTAMP}" >> $GITHUB_ENV
+          ls -lh "../pdeu-me-backup-${TIMESTAMP}.tar.gz"
+
+      - name: Count records in backup
+        run: |
+          cd data-repo
+          TOTAL=$(find records -name "*.json" -not -name ".gitkeep" 2>/dev/null | \
+            xargs -I{} python3 -c "import json,sys; d=json.load(open('{}',encoding='utf-8')); print(len(d) if isinstance(d,list) else 1)" 2>/dev/null | \
+            awk '{s+=$1} END {print s+0}')
+          FACULTY=$(find records/tab1 -name "*.json" 2>/dev/null | wc -l | tr -d ' ')
+          echo "TOTAL_RECORDS=${TOTAL}" >> $GITHUB_ENV
+          echo "FACULTY_COUNT=${FACULTY}" >> $GITHUB_ENV
+          echo "Records backed up: ${TOTAL} across ${FACULTY} faculty"
+
+      - name: Upload backup as workflow artifact (kept 90 days)
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdeu-me-data-backup-${{ env.TIMESTAMP }}
+          path: ${{ env.BACKUP_FILE }}
+          retention-days: 90
+
+      - name: Create GitHub Release with backup (kept permanently)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: backup-${{ env.TIMESTAMP }}
+          name: "Data Backup — ${{ env.TIMESTAMP }}"
+          body: |
+            ## Automatic Weekly Backup
+
+            **Date:** ${{ env.TIMESTAMP }}
+            **Total records:** ${{ env.TOTAL_RECORDS }}
+            **Faculty with submissions:** ${{ env.FACULTY_COUNT }}
+
+            This backup was created automatically every Sunday at 2:00 AM IST.
+
+            ### How to restore
+            Download the `.tar.gz` file and extract it:
+            ```bash
+            tar -xzf pdeu-me-backup-${{ env.TIMESTAMP }}.tar.gz
+            ```
+            Then upload the extracted files back to the `pdeu-me-data` repository.
+          files: ${{ env.BACKUP_FILE }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          make_latest: false

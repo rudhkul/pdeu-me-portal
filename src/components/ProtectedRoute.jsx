@@ -2,7 +2,7 @@ import { Navigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 
 export default function ProtectedRoute({ children, requiredRole }) {
-  const { session, loading } = useAuth()
+  const { session, loading, effectiveRole } = useAuth()
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
@@ -14,8 +14,18 @@ export default function ProtectedRoute({ children, requiredRole }) {
   )
 
   if (!session) return <Navigate to="/login" replace />
-  if (requiredRole && session.role !== requiredRole)
-    return <Navigate to={session.role === 'admin' ? '/admin' : '/faculty'} replace />
 
-  return children
+  // No role requirement → any logged-in user
+  if (!requiredRole) return children
+
+  // Use effectiveRole so admin-in-faculty-mode can access faculty routes
+  if (requiredRole === 'faculty' && (effectiveRole === 'faculty' || session.role === 'admin'))
+    return children
+
+  // Admin routes: only real admins
+  if (requiredRole === 'admin' && session.role === 'admin')
+    return children
+
+  // Redirect to correct home
+  return <Navigate to={effectiveRole === 'admin' ? '/admin' : '/faculty'} replace />
 }
