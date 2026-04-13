@@ -9,10 +9,7 @@ import toast from 'react-hot-toast'
 
 function formatDate(iso) {
   if (!iso) return '—'
-  return new Date(iso).toLocaleString('en-IN', {
-    day: '2-digit', month: 'short', year: 'numeric',
-    hour: '2-digit', minute: '2-digit',
-  })
+  return new Date(iso).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 
 export default function DataViewer() {
@@ -26,7 +23,7 @@ export default function DataViewer() {
   const [yearFilter,    setYearFilter]    = useState('')
   const [facultyFilter, setFacultyFilter] = useState('')
   const [expandedRow,   setExpandedRow]   = useState(null)
-  const [editingRow,    setEditingRow]    = useState(null)  // { row, userId }
+  const [editingRow,    setEditingRow]    = useState(null)
   const [saving,        setSaving]        = useState(false)
 
   const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm()
@@ -36,17 +33,10 @@ export default function DataViewer() {
   async function fetchAll() {
     setLoading(true)
     try {
-      const [data, fList] = await Promise.all([
-        getAllRecordsForTab(tab.id),
-        getAllFaculties(),
-      ])
-      setRows(data)
-      setFaculties(fList)
-    } catch (e) {
-      toast.error('Failed to load: ' + e.message)
-    } finally {
-      setLoading(false)
-    }
+      const [data, fList] = await Promise.all([getAllRecordsForTab(tab.id), getAllFaculties()])
+      setRows(data); setFaculties(fList)
+    } catch (e) { toast.error('Failed to load: ' + e.message) }
+    finally { setLoading(false) }
   }
 
   const filtered = useMemo(() => {
@@ -67,7 +57,7 @@ export default function DataViewer() {
     if (!tab) return []
     return [
       { key: 'facultyName', label: 'Faculty Name', type: 'text' },
-      ...tab.fields.filter(f => !['file', 'boolean'].includes(f.type)).slice(0, 4),
+      ...tab.fields.filter(f => !['file','boolean'].includes(f.type)).slice(0, 4),
     ]
   }, [tab])
 
@@ -84,28 +74,21 @@ export default function DataViewer() {
   }
 
   function startEdit(row) {
-    // Find which faculty owns this row
     const faculty = faculties.find(f => f.fullName === row.facultyName)
     setEditingRow({ row, userId: faculty?.id })
-    reset(row)
-    setExpandedRow(null)
+    reset(row); setExpandedRow(null)
   }
 
   async function onEditSubmit(values) {
     if (!editingRow) return
     setSaving(true)
     try {
-      const updated = await updateRecord(tab.id, editingRow.userId, editingRow.row.id, values)
-      // Refresh rows
+      await updateRecord(tab.id, editingRow.userId, editingRow.row.id, values)
       await fetchAll()
-      setEditingRow(null)
-      reset()
+      setEditingRow(null); reset()
       toast.success('Record updated!')
-    } catch (e) {
-      toast.error('Update failed: ' + e.message)
-    } finally {
-      setSaving(false)
-    }
+    } catch (e) { toast.error('Update failed: ' + e.message) }
+    finally { setSaving(false) }
   }
 
   async function handleDelete(row) {
@@ -115,21 +98,19 @@ export default function DataViewer() {
     try {
       await adminDeleteRecord(tab.id, faculty.id, row.id)
       setRows(prev => prev.filter(r => r.id !== row.id))
-      toast.success('Record deleted')
-    } catch (e) {
-      toast.error('Delete failed: ' + e.message)
-    }
+      toast.success('Deleted')
+    } catch (e) { toast.error('Delete failed: ' + e.message) }
   }
 
-  if (!tab) return <div className="p-8 text-gray-500">Tab not found.</div>
+  if (!tab) return <div className="p-8 text-gray-500 dark:text-gray-400">Tab not found.</div>
 
   return (
     <div className="p-6 max-w-full">
       {/* Header */}
       <div className="flex flex-wrap items-center gap-3 mb-6">
         <Link to="/admin" className="text-gray-400 hover:text-pdeu-blue text-sm">← Dashboard</Link>
-        <span className="text-gray-300">/</span>
-        <h1 className="text-xl font-bold text-pdeu-blue">{tab.icon} {tab.name}</h1>
+        <span className="text-gray-300 dark:text-gray-600">/</span>
+        <h1 className="text-xl font-bold text-pdeu-blue dark:text-white">{tab.icon} {tab.name}</h1>
         <div className="ml-auto flex gap-2">
           <Link to="/admin/export" className="btn-secondary text-sm">🛠 Custom Export</Link>
           <button onClick={quickExport} className="btn-primary text-sm">📥 Quick Export</button>
@@ -138,12 +119,12 @@ export default function DataViewer() {
 
       {/* Admin edit form */}
       {editingRow && (
-        <div className="card mb-6 border-2 border-amber-300">
+        <div className="card mb-6 border-2 border-amber-300 dark:border-amber-500">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-gray-800">
+            <h2 className="font-semibold text-gray-800 dark:text-gray-100">
               ✏️ Editing record by <span className="text-pdeu-blue">{editingRow.row.facultyName}</span>
             </h2>
-            <p className="text-xs text-gray-400"><span className="text-red-500">*</span> Required fields</p>
+            <p className="text-xs text-gray-400"><span className="text-red-500">*</span> Required</p>
           </div>
           <form onSubmit={handleSubmit(onEditSubmit)}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -153,13 +134,9 @@ export default function DataViewer() {
                 </div>
               ))}
             </div>
-            <div className="flex gap-3 mt-6 pt-4 border-t border-gray-100">
-              <button type="submit" className="btn-primary" disabled={saving}>
-                {saving ? '⏳ Saving…' : '💾 Save Changes'}
-              </button>
-              <button type="button" className="btn-secondary" onClick={() => { setEditingRow(null); reset() }}>
-                Cancel
-              </button>
+            <div className="flex gap-3 mt-6 pt-4 border-t border-gray-100 dark:border-gray-700">
+              <button type="submit" className="btn-primary" disabled={saving}>{saving ? '⏳ Saving…' : '💾 Save Changes'}</button>
+              <button type="button" className="btn-secondary" onClick={() => { setEditingRow(null); reset() }}>Cancel</button>
             </div>
           </form>
         </div>
@@ -177,17 +154,19 @@ export default function DataViewer() {
           <option value="">All Years</option>
           {ACADEMIC_YEARS.map(y => <option key={y} value={y}>{y}</option>)}
         </select>
-        <span className="self-center text-sm text-gray-500">{filtered.length} / {rows.length} records</span>
+        <span className="self-center text-sm text-gray-500 dark:text-gray-400">
+          {filtered.length} / {rows.length} records
+        </span>
       </div>
 
       {/* Table */}
       {loading ? (
-        <div className="text-center py-20 text-gray-400">
+        <div className="text-center py-20 text-gray-400 dark:text-gray-500">
           <div className="w-8 h-8 border-2 border-pdeu-blue border-t-transparent rounded-full animate-spin mx-auto mb-3" />
           Loading from repository…
         </div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-20 text-gray-400">
+        <div className="text-center py-20 text-gray-400 dark:text-gray-500">
           <p className="text-4xl mb-3">📭</p>
           <p>No records{search || yearFilter || facultyFilter ? ' matching filters' : ' yet'}.</p>
         </div>
@@ -195,37 +174,36 @@ export default function DataViewer() {
         <div className="card p-0 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-pdeu-light sticky top-0 z-10">
+              <thead className="bg-pdeu-light dark:bg-gray-700 sticky top-0 z-10">
                 <tr>
                   {displayFields.map(f => (
-                    <th key={f.key} className="text-left px-4 py-3 text-xs font-semibold text-pdeu-blue uppercase tracking-wide whitespace-nowrap">
-                      {f.label}
-                    </th>
+                    <th key={f.key} className="table-header">{f.label}</th>
                   ))}
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-pdeu-blue uppercase tracking-wide whitespace-nowrap">Added</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-pdeu-blue uppercase tracking-wide whitespace-nowrap">Updated</th>
-                  <th className="px-4 py-3 w-28" />
+                  <th className="table-header">Added</th>
+                  <th className="table-header">Updated</th>
+                  <th className="px-4 py-3 w-32" />
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((row, idx) => (
                   <>
                     <tr key={row.id}
-                      className={`border-b border-gray-50 hover:bg-blue-50/30 ${idx % 2 === 1 ? 'bg-gray-50/40' : ''}`}
+                      className={`border-b border-gray-100 dark:border-gray-700 hover:bg-blue-50/30 dark:hover:bg-gray-700/50
+                        ${idx % 2 === 1 ? 'bg-gray-50/40 dark:bg-gray-800/60' : ''}`}
                     >
                       {displayFields.map(f => (
-                        <td key={f.key} className="px-4 py-2.5 text-gray-700 max-w-[180px] truncate" title={String(row[f.key] ?? '')}>
-                          {row[f.key] != null && row[f.key] !== '' ? String(row[f.key]) : <span className="text-gray-300">—</span>}
+                        <td key={f.key} className="table-cell" title={String(row[f.key] ?? '')}>
+                          {row[f.key] != null && row[f.key] !== ''
+                            ? String(row[f.key])
+                            : <span className="text-gray-300 dark:text-gray-600">—</span>}
                         </td>
                       ))}
-                      <td className="px-4 py-2.5 text-gray-400 text-xs whitespace-nowrap">{formatDate(row.createdAt)}</td>
-                      <td className="px-4 py-2.5 text-gray-400 text-xs whitespace-nowrap">{formatDate(row.updatedAt)}</td>
+                      <td className="px-4 py-2.5 text-gray-400 dark:text-gray-500 text-xs whitespace-nowrap">{formatDate(row.createdAt)}</td>
+                      <td className="px-4 py-2.5 text-gray-400 dark:text-gray-500 text-xs whitespace-nowrap">{formatDate(row.updatedAt)}</td>
                       <td className="px-4 py-2.5">
                         <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => setExpandedRow(expandedRow === row.id ? null : row.id)}
-                            className="text-xs text-gray-400 hover:text-pdeu-blue"
-                          >
+                          <button onClick={() => setExpandedRow(expandedRow === row.id ? null : row.id)}
+                            className="text-xs text-gray-400 hover:text-pdeu-blue dark:hover:text-blue-400">
                             {expandedRow === row.id ? '▲ Less' : '▼ More'}
                           </button>
                           <button onClick={() => startEdit(row)} className="text-xs text-pdeu-blue hover:underline">Edit</button>
@@ -236,23 +214,27 @@ export default function DataViewer() {
 
                     {expandedRow === row.id && (
                       <tr key={`${row.id}_exp`}>
-                        <td colSpan={displayFields.length + 3} className="px-6 py-4 bg-blue-50/20 border-b border-blue-100">
+                        <td colSpan={displayFields.length + 3}
+                          className="px-6 py-4 bg-blue-50/20 dark:bg-gray-700/30 border-b border-blue-100 dark:border-gray-700">
                           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                             {tab.fields.map(f => (
                               <div key={f.key}>
-                                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{f.label}</p>
-                                <p className="text-sm text-gray-800 mt-0.5 break-words">
+                                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">{f.label}</p>
+                                <p className="text-sm text-gray-800 dark:text-gray-200 mt-0.5 break-words">
                                   {f.type === 'file' && row[f.key]
-                                    ? <a href={row[f.key]} target="_blank" rel="noreferrer" className="text-pdeu-blue underline">View File ↗</a>
-                                    : (row[f.key] != null && row[f.key] !== '' ? String(row[f.key]) : <span className="text-gray-300">—</span>)
+                                    ? <a href={row[f.key]} target="_blank" rel="noreferrer"
+                                        className="text-pdeu-blue underline">View File ↗</a>
+                                    : (row[f.key] != null && row[f.key] !== ''
+                                        ? String(row[f.key])
+                                        : <span className="text-gray-300 dark:text-gray-600">—</span>)
                                   }
                                 </p>
                               </div>
                             ))}
                             <div className="md:col-span-2">
-                              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Audit Trail</p>
-                              <p className="text-xs text-gray-500 mt-0.5">Created: {formatDate(row.createdAt)}</p>
-                              <p className="text-xs text-gray-500">Last updated: {formatDate(row.updatedAt)}</p>
+                              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Audit Trail</p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Created: {formatDate(row.createdAt)}</p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400">Updated: {formatDate(row.updatedAt)}</p>
                             </div>
                           </div>
                         </td>
