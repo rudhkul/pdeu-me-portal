@@ -1,108 +1,49 @@
 import { useState } from 'react'
 import toast from 'react-hot-toast'
 
+const PDEU_AFFIL = 'Department of Mechanical Engineering, School of Technology, Pandit Deendayal Energy University, Gandhinagar 382426, India'
+
 /**
- * DOI Lookup component for the Publications tab.
- * Uses the free CrossRef API (no API key needed).
- * Calls onFill(fields) with the mapped data to auto-fill the form.
+ * DOI Lookup for the Publications tab.
+ * Uses CrossRef public API (free, no key).
+ *
+ * Note on affiliations:
+ *   CrossRef often omits affiliation data — it's supplied by publishers and many skip it.
+ *   We auto-set the submitting faculty's affiliation to PDEU.
+ *   Co-author affiliations are filled where CrossRef provides them.
  */
-export default function DOILookup({ onFill }) {
+export default function DOILookup({ onFill, facultyName }) {
   const [doi,     setDoi]     = useState('')
   const [loading, setLoading] = useState(false)
+  const [result,  setResult]  = useState(null)   // last fetched work object
 
   async function lookup() {
     const cleaned = doi.trim()
-      .replace(/^https?:\/\/(dx\.)?doi\.org\//i, '')  // strip URL prefix if pasted
-      .replace(/^doi:/i, '')
+      .replace(/^https?:\/\/(dx\.)?doi\.org\//i, '')
+      .replace(/^doi:\s*/i, '')
       .trim()
 
     if (!cleaned) { toast.error('Enter a DOI first'); return }
 
     setLoading(true)
+    setResult(null)
     try {
       const res = await fetch(
         `https://api.crossref.org/works/${encodeURIComponent(cleaned)}`,
-        { headers: { 'User-Agent': 'PDEU-ME-Portal/1.0 (mailto:admin@sot.pdpu.ac.in)' } }
+        { headers: { 'User-Agent': 'PDEU-ME-Portal/1.0 (mailto:me-portal@sot.pdpu.ac.in)' } }
       )
-      if (!res.ok) throw new Error(res.status === 404 ? 'DOI not found. Check and try again.' : `CrossRef error ${res.status}`)
+      if (res.status === 404) throw new Error('DOI not found. Check that it is correct and try again.')
+      if (!res.ok)            throw new Error(`CrossRef returned an error (${res.status}). Try again.`)
 
       const { message: w } = await res.json()
-
-      // ── Map CrossRef fields → our tab5 field keys ─────────
-      const fields = {}
-
-      // Title
-      if (w.title?.[0])
-        fields.title = w.title[0]
-
-      // Authors as semicolon-separated list
-      if (w.author?.length) {
-        fields.coauthors = w.author.map(a =>
-          [a.given, a.family].filter(Boolean).join(' ')
-        ).join('; ')
-
-        // Affiliations
-        const affils = w.author
-          .map(a => a.affiliation?.[0]?.name || '')
-          .filter(Boolean)
-        if (affils.length)
-          fields.coauthor_affiliations = affils.join('; ')
-      }
-
-      // Journal / conference name
-      if (w['container-title']?.[0])
-        fields.journal_or_conf_name = w['container-title'][0]
-
-      // Publisher
-      if (w.publisher)
-        fields.publisher_name = w.publisher
-
-      // Type
-      const typeMap = {
-        'journal-article':      'Journal Paper',
-        'proceedings-article':  'Conference Paper',
-        'book-chapter':         'Book Chapter',
-        'book':                 'Book',
-        'posted-content':       'Preprint',
-      }
-      if (w.type && typeMap[w.type])
-        fields.pub_type = typeMap[w.type]
-
-      // Volume, issue, pages
-      if (w.volume) fields.volume_no = w.volume
-      if (w.issue)  fields.issue_no  = w.issue
-      if (w.page)   fields.page_nos  = w.page
-
-      // Impact factor — CrossRef doesn't provide IF, skip
-
-      // DOI
-      fields.doi = cleaned
-
-      // Publication date
-      const dateParts = w.published?.['date-parts']?.[0] ||
-                        w['published-print']?.['date-parts']?.[0] ||
-                        w['published-online']?.['date-parts']?.[0]
-      if (dateParts) {
-        const [y, m = 1, d = 1] = dateParts
-        fields.pub_date     = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`
-        fields.academic_year = `${y}-${String(y + 1).slice(-2)}`
-      }
-
-      // Status
-      fields.status = 'Published'
-
-      // ISSN → subscription type hint
-      if (w.ISSN?.length) fields.subscription_type = 'Subscription'
-
-      // URL
-      if (w.URL) fields.website_link = w.URL
+      setResult(w)
+      const fields = buildFields(w, facultyName)
 
       onFill(fields)
-
-      const filled = Object.keys(fields).length
-      toast.success(`Auto-filled ${filled} fields from CrossRef!`)
+      const n = Object.keys(fields).length
+      toast.success(`Auto-filled ${n} fields! Check and add what's missing.`)
     } catch (e) {
-      toast.error(e.message || 'Lookup failed')
+      toast.error(e.message)
     } finally {
       setLoading(false)
     }
@@ -112,17 +53,20 @@ export default function DOILookup({ onFill }) {
     <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-xl">
       <p className="text-sm font-semibold text-blue-800 dark:text-blue-300 mb-1 flex items-center gap-2">
         🔍 Auto-fill from DOI
+        <span className="font-normal text-xs text-blue-500 dark:text-blue-400">— powered by CrossRef</span>
       </p>
       <p className="text-xs text-blue-600 dark:text-blue-400 mb-3">
-        Paste your DOI and click Fetch — title, authors, journal, volume, pages and more will be filled automatically via CrossRef.
+        Paste your DOI to auto-fill title, authors, journal, volume, pages, and more.
+        Affiliations from CrossRef are often incomplete — we'll set yours to PDEU automatically.
       </p>
+
       <div className="flex gap-2">
         <input
           type="text"
           value={doi}
           onChange={e => setDoi(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && lookup()}
-          placeholder="e.g. 10.1016/j.energy.2024.123456  or paste the full DOI URL"
+          onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), lookup())}
+          placeholder="e.g.  10.1016/j.energy.2024.123456  or paste the full DOI URL"
           className="form-input flex-1 font-mono text-sm"
         />
         <button
@@ -132,15 +76,121 @@ export default function DOILookup({ onFill }) {
           className="btn-primary text-sm whitespace-nowrap flex items-center gap-2 flex-shrink-0"
         >
           {loading
-            ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Fetching…</>
+            ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"/>Fetching…</>
             : '🔍 Fetch'
           }
         </button>
       </div>
-      <p className="text-xs text-blue-500 dark:text-blue-500 mt-2">
-        Works for journal papers, conference papers, and book chapters. Powered by CrossRef (free, no account needed).
-        Fill in any missing fields manually after fetching.
-      </p>
+
+      {/* Show what was filled after a successful fetch */}
+      {result && (
+        <div className="mt-3 bg-white dark:bg-gray-800 rounded-lg p-3 border border-blue-100 dark:border-blue-800 text-xs space-y-1">
+          <p className="font-semibold text-gray-700 dark:text-gray-300">Filled from CrossRef:</p>
+          {result.title?.[0] && <p className="text-gray-600 dark:text-gray-400">📄 <strong>Title:</strong> {result.title[0].slice(0, 80)}…</p>}
+          {result.author?.length && (
+            <p className="text-gray-600 dark:text-gray-400">
+              👥 <strong>Authors:</strong> {result.author.length} author(s) found
+              {result.author.some(a => a.affiliation?.length)
+                ? ' (with affiliations)'
+                : ' — affiliations not in CrossRef, set to PDEU for your entry'
+              }
+            </p>
+          )}
+          {result['container-title']?.[0] && <p className="text-gray-600 dark:text-gray-400">📰 <strong>Journal:</strong> {result['container-title'][0]}</p>}
+          <p className="text-blue-500 dark:text-blue-400 pt-1">✏️ Review and complete any missing fields below.</p>
+        </div>
+      )}
     </div>
   )
+}
+
+// ── Map CrossRef work object → tab5 field keys ────────────────
+function buildFields(w, facultyName) {
+  const fields = {}
+
+  // Title
+  if (w.title?.[0]) fields.title = w.title[0]
+
+  // Type
+  const typeMap = {
+    'journal-article':     'Journal Paper',
+    'proceedings-article': 'Conference Paper',
+    'book-chapter':        'Book Chapter',
+    'book':                'Book',
+    'posted-content':      'Preprint',
+  }
+  if (typeMap[w.type]) fields.pub_type = typeMap[w.type]
+
+  // Status
+  fields.status = 'Published'
+
+  // Authors: build semicolon-separated name list
+  if (w.author?.length) {
+    const names = w.author.map(a => [a.given, a.family].filter(Boolean).join(' '))
+    fields.coauthors = names.join('; ')
+
+    // Find the submitting faculty's position in the author list (1-indexed)
+    if (facultyName) {
+      const lastName = facultyName.split(' ').pop()?.toLowerCase()
+      const idx = w.author.findIndex(a =>
+        a.family?.toLowerCase() === lastName ||
+        [a.given, a.family].join(' ').toLowerCase().includes(lastName || '')
+      )
+      if (idx >= 0) fields.author_number = String(idx + 1)
+    }
+
+    // Affiliations — CrossRef often omits them
+    // Build list: use CrossRef data where available, fall back to PDEU for the faculty's position
+    const authorNumber = parseInt(fields.author_number, 10)
+    const affils = w.author.map((a, i) => {
+      if (a.affiliation?.[0]?.name) return a.affiliation[0].name
+      // For the submitting faculty's slot, use PDEU
+      if (!isNaN(authorNumber) && i === authorNumber - 1) return PDEU_AFFIL
+      return ''   // unknown — leave blank for faculty to fill
+    })
+    const nonEmpty = affils.filter(Boolean)
+    if (nonEmpty.length) {
+      fields.coauthor_affiliations = affils.join('; ')
+    }
+  }
+
+  // Journal / conference / book
+  if (w['container-title']?.[0]) fields.journal_or_conf_name = w['container-title'][0]
+
+  // Publisher
+  if (w.publisher) fields.publisher_name = w.publisher
+
+  // Volume, issue, pages
+  if (w.volume) fields.volume_no   = w.volume
+  if (w.issue)  fields.issue_no    = w.issue
+  if (w.page)   fields.page_nos    = w.page
+
+  // DOI
+  if (w.DOI)  fields.doi = w.DOI
+  if (w.URL)  fields.website_link = w.URL
+
+  // Peer reviewed (CrossRef marks journals as peer-reviewed via type)
+  if (w.type === 'journal-article') fields.peer_reviewed = 'Yes'
+
+  // Subscription type hint from ISSN
+  if (w.ISSN?.length) fields.subscription_type = 'Subscription'
+
+  // Open access
+  if (w.license?.some(l => l.URL?.includes('creativecommons')))
+    fields.subscription_type = 'Open Access'
+
+  // Date and academic year
+  const parts = w.published?.['date-parts']?.[0] ||
+                w['published-print']?.['date-parts']?.[0] ||
+                w['published-online']?.['date-parts']?.[0]
+  if (parts) {
+    const [y, m = 1, d = 1] = parts
+    fields.pub_date     = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`
+    // Academic year: Jan–May → current-previous, Jun–Dec → current-next
+    fields.academic_year = m >= 6
+      ? `${y}-${String(y + 1).slice(-2)}`
+      : `${y - 1}-${String(y).slice(-2)}`
+  }
+
+  return fields
 }

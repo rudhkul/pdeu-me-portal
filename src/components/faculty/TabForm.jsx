@@ -225,7 +225,7 @@ export default function TabForm() {
 
           {/* DOI lookup — only for Publications tab */}
           {tab.id === 'tab5' && !editing && (
-            <DOILookup onFill={handleDOIFill} />
+            <DOILookup onFill={handleDOIFill} facultyName={session.fullName} />
           )}
 
           <form onSubmit={handleSubmit(onSubmit)}>

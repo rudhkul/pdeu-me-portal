@@ -1,15 +1,31 @@
 // ── Field types ───────────────────────────────────────────────
-// text | textarea | number | date | datetime | select | boolean | file | url
+// text | textarea | number | date | datetime | select | boolean | file | url | sdg_multi | proof_link
 
 const SDG = [
-  { key: 'sdg_related', label: 'Is it related to SDG?',                   type: 'select', options: ['Yes', 'No'], required: true },
-  { key: 'sdg_details', label: 'If YES – brief details of SDG relation',   type: 'textarea', conditionalOn: { key: 'sdg_related', value: 'Yes' } },
+  // sdg_goals stores comma-separated SDG numbers e.g. "3,7,13"
+  // sdg_details is a free-text explanation
+  { key: 'sdg_goals',   label: 'SDG Goals (select all that apply)',       type: 'sdg_multi' },
+  { key: 'sdg_details', label: 'Brief details of how it relates to SDG',  type: 'textarea',
+    conditionalOn: { key: 'sdg_goals', value: '__nonempty__' } },
 ]
 
+// Report name format hint shown to faculty
+const REPORT_NAME_HINT = 'Format: {Sr.No}_{Tab Name}_{Your Name} e.g. 5_Publications_DrRaviKant'
+
 const PROOF = [
-  { key: 'proof_uploaded', label: 'Proof uploaded to Drive?',              type: 'boolean' },
-  { key: 'drive_link',     label: 'OneDrive / Google Drive sharing link',  type: 'file' },
-  { key: 'report_name',    label: 'Name of Report',                        type: 'text' },
+  {
+    key:      'drive_link',
+    label:    'OneDrive / Google Drive proof link',
+    type:     'proof_link',     // special type — validated URL
+    required: true,
+  },
+  {
+    key:         'report_name',
+    label:       'Name of Report',
+    type:        'text',
+    required:    true,
+    placeholder: REPORT_NAME_HINT,
+  },
 ]
 
 export const TABS = [
