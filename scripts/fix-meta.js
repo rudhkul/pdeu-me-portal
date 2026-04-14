@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// One-time fix: creates meta/settings.json in the data repo
-// Run this if the Deadline feature shows errors
+// Run once to create meta/settings.json in the data repo
+// Needed for DeadlineManager and NotificationSettings to work
 // Usage: node scripts/fix-meta.js
 
 const OWNER  = process.env.DATA_REPO_OWNER
@@ -15,43 +15,35 @@ if (!OWNER || !REPO || !PAT) {
 const API     = `https://api.github.com/repos/${OWNER}/${REPO}/contents`
 const HEADERS = { Authorization: `Bearer ${PAT}`, Accept: 'application/vnd.github.v3+json', 'Content-Type': 'application/json' }
 
-async function fileExists(path) {
-  const res = await fetch(`${API}/${path}`, { headers: HEADERS })
-  return res.status !== 404
-}
-
-async function createFile(path, data) {
-  const content = Buffer.from(JSON.stringify(data, null, 2)).toString('base64')
-  const res = await fetch(`${API}/${path}`, {
-    method: 'PUT', headers: HEADERS,
-    body: JSON.stringify({ message: `init: create ${path}`, content })
-  })
-  if (!res.ok) throw new Error((await res.json()).message)
-}
-
 async function main() {
-  console.log('\n🔧  PDEU ME Portal — Fix Meta Files\n')
+  console.log('\n🔧  Creating meta/settings.json in data repo…')
 
-  if (await fileExists('meta/settings.json')) {
-    console.log('  ✅  meta/settings.json already exists — no action needed.')
-  } else {
-    await createFile('meta/settings.json', { deadline: '', message: '' })
-    console.log('  ✅  Created meta/settings.json')
+  // Check if already exists
+  const check = await fetch(`${API}/meta/settings.json`, { headers: HEADERS })
+  if (check.ok) {
+    console.log('✅  meta/settings.json already exists — nothing to do.\n')
+    return
   }
 
-  // Also ensure .gitkeep exists in each tab directory
-  const TABS = ['tab1','tab2','tab3','tab4','tab5','tab6','tab7','tab8','tab9','tab10',
-                'tab11','tab12','tab13','tab14','tab15','tab16','tab17','tab18','tab19','tab20']
+  const content = Buffer.from(JSON.stringify({
+    deadline: '',
+    message: '',
+    notifications_enabled: true,
+  }, null, 2)).toString('base64')
 
-  for (const tabId of TABS) {
-    const path = `records/${tabId}/.gitkeep`
-    if (!(await fileExists(path))) {
-      await createFile(path, [])
-      console.log(`  ✅  Created ${path}`)
-    }
+  const res = await fetch(`${API}/meta/settings.json`, {
+    method: 'PUT',
+    headers: HEADERS,
+    body: JSON.stringify({ message: 'init: create meta/settings.json', content }),
+  })
+
+  if (!res.ok) {
+    const err = await res.json()
+    throw new Error(err.message)
   }
 
-  console.log('\n✅  All done!\n')
+  console.log('✅  Created meta/settings.json\n')
+  console.log('The deadline manager and notification settings will now work correctly.\n')
 }
 
-main().catch(e => { console.error(e.message); process.exit(1) })
+main().catch(e => { console.error('❌', e.message); process.exit(1) })

@@ -130,7 +130,7 @@ export default function DataViewer() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {tab.fields.map(field => (
                 <div key={field.key} className={['textarea','file','url'].includes(field.type) ? 'md:col-span-2' : ''}>
-                  <DynamicField field={field} register={register} watch={watch} setValue={setValue} errors={errors} />
+                  <DynamicField field={field} register={register} watch={watch} setValue={setValue} errors={errors} tab={tab} />
                 </div>
               ))}
             </div>
