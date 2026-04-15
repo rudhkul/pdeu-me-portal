@@ -1,11 +1,18 @@
+import { hashPassword } from '../../lib/auth'
 import { useEffect, useState } from 'react'
 import { getRawUsers, saveRawUsers } from '../../lib/github'
-import { hashPassword } from '../../lib/auth'
 import toast from 'react-hot-toast'
-import { randomBytes, createHash } from 'crypto'
 
-function randomId()   { return `usr_${Math.random().toString(36).slice(2, 10)}` }
-function randomSalt() { return Math.random().toString(36).repeat(4).slice(0, 32) }
+function randomId() {
+  const arr = new Uint8Array(4)
+  window.crypto.getRandomValues(arr)
+  return 'usr_' + Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('')
+}
+function randomSalt() {
+  const arr = new Uint8Array(16)
+  window.crypto.getRandomValues(arr)
+  return Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('')
+}
 
 export default function AdminUsers() {
   const [users,    setUsers]    = useState([])

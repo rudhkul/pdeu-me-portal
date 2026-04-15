@@ -126,8 +126,7 @@ export async function downloadProof(storedPath) {
 
   let blob
   if (meta.content && !meta.truncated) {
-    const binary = atob(meta.content.replace(/
-/g, ''))
+    const binary = atob(meta.content.replace(/\n/g, ''))
     const bytes  = new Uint8Array(binary.length)
     for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
     blob = new Blob([bytes], { type: 'application/pdf' })
