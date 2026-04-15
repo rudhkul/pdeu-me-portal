@@ -235,7 +235,8 @@ export default function TabForm() {
                   className={['textarea', 'file', 'url'].includes(field.type) ? 'md:col-span-2' : ''}>
                   <DynamicField
                     field={field} register={register}
-                    watch={watch} setValue={setValue} errors={errors} tab={tab}
+                    watch={watch} setValue={setValue} errors={errors}
+                    tab={{ ...tab, _facultyName: session.fullName, _userId: session.userId, _watchValues: watch() }}
                   />
                 </div>
               ))}

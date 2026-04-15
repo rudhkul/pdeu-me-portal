@@ -21,7 +21,8 @@
     "react-hot-toast": "^2.4.1",
     "react-router-dom": "^6.23.0",
     "exceljs": "^4.4.0",
-    "@emailjs/browser": "^4.3.3"
+    "@emailjs/browser": "^4.3.3",
+    "jszip": "^3.10.1"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.2.1",

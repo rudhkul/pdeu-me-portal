@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import RichTextarea from './RichTextarea'
 import SDGSelector from './SDGSelector'
+import ProofUpload from './ProofUpload'
 
 // ── Searchable select ─────────────────────────────────────────
 function SearchableSelect({ label, options, fieldKey, register, required, error }) {
@@ -207,15 +208,18 @@ export default function DynamicField({ field, register, watch, setValue, errors,
         />
       )}
 
-      {/* Proof link — validated, with folder path hint */}
-      {field.type === 'proof_link' && (
-        <ProofLinkField
+      {/* Proof upload — PDF stored in GitHub data repo */}
+      {field.type === 'proof_upload' && (
+        <ProofUpload
           fieldKey={field.key}
           register={register}
+          setValue={setValue}
+          tabId={tab?.id}
+          userId={tab?._userId}
+          facultyName={tab?._facultyName}
+          watchValues={tab?._watchValues || {}}
           required={field.required}
           error={err}
-          tabNum={tab?.number}
-          tabName={tab?.name}
         />
       )}
 

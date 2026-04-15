@@ -5,6 +5,7 @@ import { getAllRecordsForTab, adminDeleteRecord, getAllFaculties, updateRecord }
 import { getTab, ACADEMIC_YEARS } from '../../config/tabs'
 import { exportToExcel } from '../../utils/exportExcel'
 import DynamicField from '../common/DynamicField'
+import ProofDownloader from './ProofDownloader'
 import toast from 'react-hot-toast'
 
 function formatDate(iso) {
@@ -158,6 +159,21 @@ export default function DataViewer() {
           {filtered.length} / {rows.length} records
         </span>
       </div>
+
+      {/* Proof + Excel ZIP downloader */}
+      {filtered.length > 0 && (
+        <ProofDownloader
+          rows={filtered}
+          columns={[
+            { key: 'facultyName', label: 'Faculty Name' },
+            ...tab.fields.map(f => ({ key: f.key, label: f.label })),
+            { key: 'createdAt', label: 'Date Added' },
+            { key: 'updatedAt', label: 'Last Updated' },
+          ]}
+          tab={tab}
+          label={`${tab.number}_${tab.name}${yearFilter ? '_' + yearFilter : ''}${facultyFilter ? '_' + facultyFilter.split(' ').pop() : ''}`}
+        />
+      )}
 
       {/* Table */}
       {loading ? (

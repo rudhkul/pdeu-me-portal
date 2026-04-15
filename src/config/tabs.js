@@ -1,5 +1,5 @@
 // ── Field types ───────────────────────────────────────────────
-// text | textarea | number | date | datetime | select | boolean | file | url | sdg_multi | proof_link
+// text | textarea | number | date | datetime | select | boolean | file | url | sdg_multi | proof_upload
 
 const SDG = [
   // sdg_goals stores comma-separated SDG numbers e.g. "3,7,13"
@@ -15,8 +15,8 @@ const REPORT_NAME_HINT = 'Format: {Sr.No}_{Tab Name}_{Your Name} e.g. 5_Publicat
 const PROOF = [
   {
     key:      'drive_link',
-    label:    'OneDrive / Google Drive proof link',
-    type:     'proof_link',     // special type — validated URL
+    label:    'Upload PDF Proof',
+    type:     'proof_upload',   // direct OneDrive upload — auto-named
     required: true,
   },
   {

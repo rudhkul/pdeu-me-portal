@@ -38,6 +38,7 @@ jobs:
           VITE_ADMIN_EMAIL_VivekJaiswal: ${{ secrets.VITE_ADMIN_EMAIL_VivekJaiswal }}
           VITE_ADMIN_EMAIL_Anirudh:      ${{ secrets.VITE_ADMIN_EMAIL_Anirudh }}
           VITE_ADMIN_EMAIL_Abhinaya:     ${{ secrets.VITE_ADMIN_EMAIL_Abhinaya }}
+
         run: npm run build
       - uses: actions/upload-pages-artifact@v3
         with:
