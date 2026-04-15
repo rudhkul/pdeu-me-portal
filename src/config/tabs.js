@@ -16,16 +16,11 @@ const PROOF = [
   {
     key:      'drive_link',
     label:    'Upload PDF Proof',
-    type:     'proof_upload',   // direct OneDrive upload — auto-named
+    type:     'proof_upload',   // direct upload — auto-named, stored in GitHub repo
     required: true,
   },
-  {
-    key:         'report_name',
-    label:       'Name of Report',
-    type:        'text',
-    required:    true,
-    placeholder: REPORT_NAME_HINT,
-  },
+  // report_name is auto-generated from the uploaded filename — NOT shown to faculty
+  // It is populated automatically in TabForm after upload completes
 ]
 
 export const TABS = [

@@ -64,8 +64,10 @@ export default function ProofUpload({
       setStoredPath(result.path)
       setStatus('done')
 
-      // Store the GitHub path in the form — this is what gets saved in the record
+      // Store the GitHub path in drive_link
       setValue(fieldKey, result.path, { shouldDirty: true, shouldValidate: true })
+      // Auto-set report_name from the generated filename (no manual input needed)
+      setValue('report_name', result.fileName, { shouldDirty: true })
 
     } catch (err) {
       setStatus('error')

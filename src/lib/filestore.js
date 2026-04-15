@@ -114,27 +114,29 @@ export async function uploadProof(file, tabId, userId, facultyName, formValues) 
   }
 }
 
-// ── Download a proof PDF by its stored path ───────────────────
+// ── Download a proof PDF by its stored GitHub path ────────────
+// storedPath = "proofs/tab5/usr_abc/05_Kant_file.pdf"
 // Returns: { blob, fileName }
+// Note: ProofDownloader has its own inline fetch — this export is
+// kept for any other callers that may need it.
 export async function downloadProof(storedPath) {
-  // storedPath is like "proofs/tab5/usr_abc/05_Kant_file.pdf"
   const res = await fetch(`${API}/contents/${storedPath}`, { headers: HEADERS })
-  if (!res.ok) throw new Error(`Cannot access ${storedPath} (${res.status})`)
-
+  if (!res.ok) throw new Error(`GitHub API ${res.status} for ${storedPath}`)
   const meta = await res.json()
 
-  // For files > 1MB GitHub truncates content — use download_url instead
   let blob
-  if (meta.download_url) {
-    const dlRes = await fetch(meta.download_url, { headers: HEADERS })
-    if (!dlRes.ok) throw new Error(`Download failed for ${meta.name}`)
-    blob = await dlRes.blob()
-  } else {
-    // Decode base64 content
-    const binary = atob(meta.content.replace(/\n/g, ''))
+  if (meta.content && !meta.truncated) {
+    const binary = atob(meta.content.replace(/
+/g, ''))
     const bytes  = new Uint8Array(binary.length)
     for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
     blob = new Blob([bytes], { type: 'application/pdf' })
+  } else if (meta.download_url) {
+    const dlRes = await fetch(meta.download_url, { headers: HEADERS })
+    if (!dlRes.ok) throw new Error(`Download failed (${dlRes.status}) for ${meta.name}`)
+    blob = await dlRes.blob()
+  } else {
+    throw new Error(`No content available for ${storedPath}`)
   }
 
   return { blob, fileName: meta.name || 'proof.pdf' }
