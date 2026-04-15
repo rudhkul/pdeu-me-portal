@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import { AuthProvider, useAuth } from './hooks/useAuth'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -28,7 +28,7 @@ const Any     = el => <ProtectedRoute><Layout>{el}</Layout></ProtectedRoute>
 export default function App() {
   return (
     <AuthProvider>
-      <BrowserRouter basename="/pdeu-me-portal">
+      <HashRouter>
         <Toaster
           position="top-right"
           toastOptions={{
@@ -55,7 +55,7 @@ export default function App() {
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-      </BrowserRouter>
+      </HashRouter>
     </AuthProvider>
   )
 }

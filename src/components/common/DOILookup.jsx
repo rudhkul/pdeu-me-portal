@@ -28,12 +28,32 @@ export default function DOILookup({ onFill, facultyName }) {
     setLoading(true)
     setResult(null)
     try {
-      const res = await fetch(
-        `https://api.crossref.org/works/${encodeURIComponent(cleaned)}`,
-        { headers: { 'User-Agent': 'PDEU-ME-Portal/1.0 (mailto:me-portal@sot.pdpu.ac.in)' } }
-      )
-      if (res.status === 404) throw new Error('DOI not found. Check that it is correct and try again.')
-      if (!res.ok)            throw new Error(`CrossRef returned an error (${res.status}). Try again.`)
+      // 10-second timeout — CrossRef can be slow on some networks
+      const controller = new AbortController()
+      const timer      = setTimeout(() => controller.abort(), 10000)
+
+      let res
+      try {
+        res = await fetch(
+          `https://api.crossref.org/works/${encodeURIComponent(cleaned)}`,
+          {
+            signal: controller.signal,
+            // Note: User-Agent header is blocked by browsers in fetch() — that's fine,
+            // CrossRef doesn't require it from browser clients
+          }
+        )
+      } catch (fetchErr) {
+        if (fetchErr.name === 'AbortError') {
+          throw new Error('Request timed out. CrossRef may be slow — please try again.')
+        }
+        // NetworkError — likely CORS or offline
+        throw new Error('Cannot reach CrossRef API. Check your internet connection and try again. If on a restricted network (VPN/proxy), CrossRef may be blocked.')
+      } finally {
+        clearTimeout(timer)
+      }
+
+      if (res.status === 404) throw new Error('DOI not found. Double-check the DOI and try again.')
+      if (!res.ok)            throw new Error(`CrossRef error (${res.status}). Try again shortly.`)
 
       const { message: w } = await res.json()
       setResult(w)
