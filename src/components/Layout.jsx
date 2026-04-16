@@ -326,7 +326,7 @@ export default function Layout({ children }) {
         ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
         <div className="flex items-center gap-3 px-4 py-4 border-b border-gray-100 dark:border-gray-700 min-h-[64px]">
-          <img src={ICON} alt="DIC Mechanical" className="h-10 w-auto flex-shrink-0" />
+          <img src={ICON} alt="DIC Mechanical" className="h-10 w-auto flex-shrink-0 dark:brightness-0 dark:invert" />
           <div className="min-w-0">
             <p className="font-bold text-[#003087] dark:text-white text-sm leading-tight">DIC Mechanical</p>
             <p className="text-xs text-gray-400 leading-tight">ME Dept Portal</p>
@@ -347,7 +347,7 @@ export default function Layout({ children }) {
         ${open ? 'w-64' : 'w-16'}
       `}>
         <div className="flex items-center gap-3 px-3 py-4 border-b border-gray-100 dark:border-gray-700 min-h-[64px]">
-          <img src={ICON} alt="DIC Mechanical" className="h-10 w-auto flex-shrink-0" />
+          <img src={ICON} alt="DIC Mechanical" className="h-10 w-auto flex-shrink-0 dark:brightness-0 dark:invert" />
           {open && (
             <div className="min-w-0 flex-1">
               <p className="font-bold text-[#003087] dark:text-white text-sm truncate leading-tight">DIC Mechanical</p>
@@ -374,7 +374,7 @@ export default function Layout({ children }) {
                        text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700">
             <HamburgerIcon open={false} />
           </button>
-          <img src={ICON} alt="DIC Mechanical" className="h-8 w-auto" />
+          <img src={ICON} alt="DIC Mechanical" className="h-8 w-auto dark:brightness-0 dark:invert" />
           <p className="font-bold text-[#003087] dark:text-white text-sm">DIC Mechanical</p>
           {isAdmin && (
             <button
@@ -394,7 +394,7 @@ export default function Layout({ children }) {
         {/* Footer */}
         <footer className="border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 px-6 py-3 flex flex-wrap items-center justify-between gap-2 text-xs text-gray-400 dark:text-gray-500">
           <div className="flex items-center gap-2">
-            <img src={ICON} alt="DIC Mechanical" className="h-5 w-auto opacity-60" />
+            <img src={ICON} alt="DIC Mechanical" className="h-5 w-auto opacity-60 dark:brightness-0 dark:invert dark:opacity-40" />
             <span>
               Powered by <span className="font-medium text-gray-500 dark:text-gray-400">DIC Mechanical</span>
               &nbsp;·&nbsp;
