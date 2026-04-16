@@ -13,7 +13,7 @@ const ALT_ROW_BG = 'FFF8F9FF'
  */
 export async function exportToExcel(rows, columns, sheetName = 'Data', fileName = 'export') {
   const wb = new ExcelJS.Workbook()
-  wb.creator = 'PDEU ME Portal'
+  wb.creator = 'DIC Mechanical Portal'
   wb.created  = new Date()
 
   const ws = wb.addWorksheet(sheetName.slice(0, 31))
@@ -65,7 +65,7 @@ export async function exportToExcel(rows, columns, sheetName = 'Data', fileName 
  */
 export async function exportMultiSheet(sheets) {
   const wb = new ExcelJS.Workbook()
-  wb.creator = 'PDEU ME Portal'
+  wb.creator = 'DIC Mechanical Portal'
   wb.created  = new Date()
 
   for (const { rows, columns, sheetName } of sheets) {

@@ -31,7 +31,7 @@ async function fetchProofBlob(githubPath) {
 async function buildExcelBuffer(rows, columns, sheetName) {
   const ExcelJS = (await import('exceljs')).default
   const wb = new ExcelJS.Workbook()
-  wb.creator = 'PDEU ME Portal'
+  wb.creator = 'DIC Mechanical Portal'
   const ws = wb.addWorksheet(sheetName.slice(0, 31))
   ws.columns = columns.map(c => ({ key: c.key, width: Math.max(c.label.length + 4, 18) }))
 

@@ -10,7 +10,7 @@ function OnboardingBanner({ filledTabs, onDismiss }) {
     <div className="bg-pdeu-light dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 mb-6 flex flex-wrap gap-4 items-start">
       <span className="text-2xl">👋</span>
       <div className="flex-1 min-w-0">
-        <p className="font-semibold text-pdeu-blue dark:text-blue-300">Welcome to the ME Department Data Portal!</p>
+        <p className="font-semibold text-pdeu-blue dark:text-blue-300">Welcome to the DIC Mechanical Data Portal!</p>
         <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
           Please fill in your data across all 20 sections. Here's how to get started:
         </p>

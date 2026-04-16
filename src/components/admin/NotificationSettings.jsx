@@ -95,7 +95,7 @@ export default function NotificationSettings() {
                   <br/>
                   <p>View it here: {"{{portal_url}}"}</p>
                   <br/>
-                  <p>— ME Dept Data Portal, PDEU</p>
+                  <p>— DIC Mechanical · ME Dept, PDEU</p>
                 </div>
                 <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
                   Note the <span className={codeCls}>Template ID</span>.
