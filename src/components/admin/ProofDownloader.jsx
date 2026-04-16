@@ -2,14 +2,8 @@ import { useState } from 'react'
 import JSZip from 'jszip'
 import toast from 'react-hot-toast'
 
-const OWNER   = import.meta.env.VITE_DATA_REPO_OWNER
-const REPO    = import.meta.env.VITE_DATA_REPO_NAME
-const PAT     = import.meta.env.VITE_GITHUB_PAT
-const API     = `https://api.github.com/repos/${OWNER}/${REPO}`
-const HEADERS = {
-  Authorization:  `Bearer ${PAT}`,
-  Accept:         'application/vnd.github.v3+json',
-}
+const WORKER = import.meta.env.VITE_WORKER_URL
+const API    = `${WORKER}/api`
 
 // Download a proof PDF by its stored GitHub path e.g. "proofs/tab5/usr_abc/file.pdf"
 // Uses the raw content API which works for files up to 100 MB without size limits.

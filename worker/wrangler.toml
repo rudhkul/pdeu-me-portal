@@ -1,0 +1,21 @@
+# Cloudflare Worker configuration
+# Deploy with: npx wrangler deploy
+
+name       = "pdeu-me-portal-proxy"
+main       = "index.js"
+compatibility_date = "2024-01-01"
+
+# No paid features needed — runs on free tier
+# Free tier: 100,000 requests/day, 10ms CPU per request
+# Your portal will never come close to this limit
+
+[vars]
+# Non-secret vars (safe to commit)
+# GITHUB_OWNER and GITHUB_REPO are set here as a reminder
+# but the actual values go in wrangler secret (see deploy steps)
+
+# Secrets (DO NOT put values here — set via CLI):
+# GITHUB_PAT      → wrangler secret put GITHUB_PAT
+# GITHUB_OWNER    → wrangler secret put GITHUB_OWNER
+# GITHUB_REPO     → wrangler secret put GITHUB_REPO
+# ALLOWED_ORIGIN  → wrangler secret put ALLOWED_ORIGIN
