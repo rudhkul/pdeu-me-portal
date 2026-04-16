@@ -1,23 +1,35 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import RichTextarea from './RichTextarea'
 import SDGSelector from './SDGSelector'
 import ProofUpload from './ProofUpload'
+import ProfilePictureUpload from './ProfilePictureUpload'
 
 // ── Searchable select ─────────────────────────────────────────
-function SearchableSelect({ label, options, fieldKey, register, required, error }) {
+function SearchableSelect({ label, options, fieldKey, register, required, error, value = '', setValue }) {
   const [search, setSearch] = useState('')
-  const [open,   setOpen]   = useState(false)
-  const [value,  setValue]  = useState('')
-  const reg      = register(fieldKey, { required: required ? `${label} is required` : false })
+  const [open, setOpen] = useState(false)
+  const [selected, setSelected] = useState(value || '')
+  const reg = register(fieldKey, { required: required ? `${label} is required` : false })
   const filtered = options.filter(o => o.toLowerCase().includes(search.toLowerCase()))
+
+  useEffect(() => {
+    setSelected(value || '')
+  }, [value])
+
+  function apply(nextValue) {
+    setSelected(nextValue)
+    setSearch('')
+    setOpen(false)
+    setValue(fieldKey, nextValue, { shouldDirty: true, shouldValidate: true })
+  }
 
   return (
     <div className="relative">
-      <input type="hidden" {...reg} value={value} />
+      <input type="hidden" {...reg} value={selected} readOnly />
       <button type="button" onClick={() => setOpen(o => !o)}
         className={`form-input text-left flex items-center justify-between ${error ? 'border-red-400' : ''}`}>
-        <span className={value ? 'text-gray-800 dark:text-gray-100' : 'text-gray-400 dark:text-gray-500'}>
-          {value || '— Select —'}
+        <span className={selected ? 'text-gray-800 dark:text-gray-100' : 'text-gray-400 dark:text-gray-500'}>
+          {selected || '— Select —'}
         </span>
         <span className="text-gray-400 ml-2 text-xs">{open ? '▲' : '▼'}</span>
       </button>
@@ -29,14 +41,14 @@ function SearchableSelect({ label, options, fieldKey, register, required, error 
               className="w-full text-sm px-3 py-1.5 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-pdeu-blue" />
           </div>
           <ul className="max-h-52 overflow-y-auto py-1">
-            <li onClick={() => { setValue(''); setOpen(false); setSearch('') }}
+            <li onClick={() => apply('')}
               className="px-3 py-2 text-sm text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">— Select —</li>
             {filtered.length === 0
               ? <li className="px-3 py-2 text-sm text-gray-400">No matches</li>
               : filtered.map(o => (
-                  <li key={o} onClick={() => { setValue(o); setOpen(false); setSearch('') }}
+                  <li key={o} onClick={() => apply(o)}
                     className={`px-3 py-2 text-sm cursor-pointer hover:bg-pdeu-light dark:hover:bg-gray-700
-                      ${value === o ? 'bg-pdeu-light text-pdeu-blue font-medium' : 'text-gray-700 dark:text-gray-200'}`}>
+                      ${selected === o ? 'bg-pdeu-light text-pdeu-blue font-medium' : 'text-gray-700 dark:text-gray-200'}`}>
                     {o}
                   </li>
                 ))
@@ -218,6 +230,21 @@ export default function DynamicField({ field, register, watch, setValue, errors,
           userId={tab?._userId}
           facultyName={tab?._facultyName}
           watchValues={tab?._watchValues || {}}
+          currentValue={watch ? watch(field.key) : ''}
+          required={field.required}
+          error={err}
+        />
+      )}
+
+      {/* Profile picture upload */}
+      {field.type === 'profile_picture_upload' && (
+        <ProfilePictureUpload
+          fieldKey={field.key}
+          register={register}
+          setValue={setValue}
+          userId={tab?._userId}
+          facultyName={tab?._facultyName}
+          currentValue={watch ? watch(field.key) : ''}
           required={field.required}
           error={err}
         />
@@ -232,8 +259,16 @@ export default function DynamicField({ field, register, watch, setValue, errors,
 
       {/* Select */}
       {field.type === 'select' && useSearchable && (
-        <SearchableSelect label={field.label} options={field.options}
-          fieldKey={field.key} register={register} required={field.required} error={err} />
+        <SearchableSelect
+          label={field.label}
+          options={field.options}
+          fieldKey={field.key}
+          register={register}
+          required={field.required}
+          error={err}
+          value={watch ? watch(field.key) || '' : ''}
+          setValue={setValue}
+        />
       )}
       {field.type === 'select' && !useSearchable && (
         <select id={field.key} {...baseReg} className={cls}>

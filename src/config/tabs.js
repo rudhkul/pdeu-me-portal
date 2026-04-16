@@ -1,5 +1,5 @@
 // ── Field types ───────────────────────────────────────────────
-// text | textarea | number | date | datetime | select | boolean | file | url | sdg_multi | proof_upload
+// text | textarea | number | date | datetime | select | boolean | file | url | sdg_multi | proof_upload | profile_picture_upload
 
 const SDG = [
   // sdg_goals stores comma-separated SDG numbers e.g. "3,7,13"
@@ -12,16 +12,44 @@ const SDG = [
 // Report name format hint shown to faculty
 const REPORT_NAME_HINT = 'Format: {Sr.No}_{Tab Name}_{Your Name} e.g. 5_Publications_DrRaviKant'
 
+// Tabs with proof required (proof is meaningful for these)
+export const PROOF_REQUIRED_TABS = [
+  'tab2','tab4','tab5','tab6','tab7','tab8','tab9',
+  'tab10','tab11','tab12','tab13','tab14','tab15','tab16','tab19','tab20'
+]
+
 const PROOF = [
   {
     key:      'drive_link',
     label:    'Upload PDF Proof',
-    type:     'proof_upload',   // direct upload — auto-named, stored in GitHub repo
-    required: true,
+    type:     'proof_upload',
+    required: false,   // enforced dynamically in TabForm based on PROOF_REQUIRED_TABS
   },
-  // report_name is auto-generated from the uploaded filename — NOT shown to faculty
-  // It is populated automatically in TabForm after upload completes
 ]
+
+
+// SDG list — also used by SDGSelector component and DataViewer export
+export const SDG_LIST = [
+  { num: 1,  label: 'No Poverty' },
+  { num: 2,  label: 'Zero Hunger' },
+  { num: 3,  label: 'Good Health and Well-being' },
+  { num: 4,  label: 'Quality Education' },
+  { num: 5,  label: 'Gender Equality' },
+  { num: 6,  label: 'Clean Water and Sanitation' },
+  { num: 7,  label: 'Affordable and Clean Energy' },
+  { num: 8,  label: 'Decent Work and Economic Growth' },
+  { num: 9,  label: 'Industry, Innovation and Infrastructure' },
+  { num: 10, label: 'Reduced Inequalities' },
+  { num: 11, label: 'Sustainable Cities and Communities' },
+  { num: 12, label: 'Responsible Consumption and Production' },
+  { num: 13, label: 'Climate Action' },
+  { num: 14, label: 'Life Below Water' },
+  { num: 15, label: 'Life on Land' },
+  { num: 16, label: 'Peace, Justice and Strong Institutions' },
+  { num: 17, label: 'Partnerships for the Goals' },
+]
+
+export const ACADEMIC_YEARS = ['2024-25','2023-24','2022-23','2021-22','2020-21','2019-20']
 
 export const TABS = [
   {
@@ -29,6 +57,7 @@ export const TABS = [
     table: 'tab1_faculty_info', icon: '👤', isProfile: true,
     description: 'Personal academic and professional profile. One record per faculty.',
     fields: [
+      { key: 'profile_picture',              label: 'Profile Picture',                         type: 'profile_picture_upload' },
       { key: 'contact_number',               label: 'Contact Number',                          type: 'text',    required: true },
       { key: 'employee_code',                label: 'Employee Code (Salary Slip)',              type: 'text',    required: true },
       { key: 'appar_id',                     label: 'APPAR ID (if any)',                        type: 'text' },
@@ -71,7 +100,7 @@ export const TABS = [
       { key: 'achievement_level',  label: 'Achievement Level',                                    type: 'select', options: ['International', 'National', 'State', 'University'], required: true },
       { key: 'achievement_type',   label: 'Type',                                                 type: 'select', options: ['Faculty Achievement', 'Student Achievement', 'Student Achievement – Faculty as Guide'], required: true },
       { key: 'achievement_date',   label: 'Achievement Date',                                     type: 'date',   required: true },
-      { key: 'academic_year',      label: 'Academic Year',                                        type: 'text',   required: true },
+      { key: 'academic_year',      label: 'Academic Year',                                        type: 'select', options: ACADEMIC_YEARS, required: true },
       { key: 'awarding_agency',    label: 'Name of Awarding Agency',                              type: 'text',   required: true },
       { key: 'outcome',            label: 'Outcome (fund received or other details)',              type: 'textarea' },
       { key: 'student_roll_names', label: 'Roll Number & Name of Students (if applicable)',       type: 'textarea' },
@@ -84,7 +113,7 @@ export const TABS = [
     table: 'tab3_subject_mapping', icon: '📚',
     description: 'Courses taught — Even and Odd semesters.',
     fields: [
-      { key: 'academic_year',         label: 'Academic Year',                         type: 'text',   required: true },
+      { key: 'academic_year',         label: 'Academic Year',                         type: 'select', options: ACADEMIC_YEARS,   required: true },
       { key: 'semester_type',         label: 'Semester',                              type: 'select', options: ['Even', 'Odd'], required: true },
       { key: 'course_name',           label: 'Name of Course',                        type: 'text',   required: true },
       { key: 'semester',              label: 'Semester Number',                        type: 'text',   required: true },
@@ -148,7 +177,7 @@ export const TABS = [
       { key: 'page_nos',               label: 'Page Numbers',                           type: 'text' },
       { key: 'publisher_name',         label: 'Publisher Name',                         type: 'text' },
       { key: 'doi',                    label: 'DOI',                                    type: 'text' },
-      { key: 'academic_year',          label: 'Academic Year',                          type: 'text', required: true },
+      { key: 'academic_year',          label: 'Academic Year',                          type: 'select', options: ACADEMIC_YEARS, required: true },
       { key: 'pub_date',               label: 'Date of Publication / Conference',       type: 'date' },
       { key: 'event_place',            label: 'Event Institute & Place (conference)',   type: 'text' },
       { key: 'website_link',           label: 'Website Link',                           type: 'url' },
@@ -166,7 +195,7 @@ export const TABS = [
       { key: 'project_type',        label: 'Type',                                     type: 'select', options: ['Research Project', 'Consultancy', 'Other'], required: true },
       { key: 'start_date',          label: 'Start Date',                               type: 'date' },
       { key: 'end_date',            label: 'End Date',                                 type: 'date' },
-      { key: 'academic_year',       label: 'Academic Year',                            type: 'text',   required: true },
+      { key: 'academic_year',       label: 'Academic Year',                            type: 'select', options: ACADEMIC_YEARS,   required: true },
       { key: 'funding_agency',      label: 'Name of Funding Agency',                   type: 'text' },
       { key: 'pi_name',             label: 'Name of PI',                               type: 'text',   required: true },
       { key: 'copi_name',           label: 'Co-PI Name & Affiliation',                 type: 'textarea' },
@@ -200,7 +229,7 @@ export const TABS = [
       { key: 'other_inventors_affil', label: 'Affiliations of Other Inventors',        type: 'textarea' },
       { key: 'students_involved',     label: 'Name of Students Involved (if any)',     type: 'textarea' },
       { key: 'activity_type',         label: 'Activity Type',                          type: 'select', options: ['Patent – Filed', 'Patent – Published', 'Patent – Granted', 'Prototype / Working Model', 'Copyright', 'Other'], required: true },
-      { key: 'academic_year',         label: 'Academic Year',                          type: 'text',   required: true },
+      { key: 'academic_year',         label: 'Academic Year',                          type: 'select', options: ACADEMIC_YEARS,   required: true },
       { key: 'grant_date',            label: 'Date of Grant / Publication / Production', type: 'date' },
       { key: 'awarded_by',            label: 'Awarded By (Patent Office)',              type: 'text' },
       { key: 'patent_number',         label: 'Patent / Model Number',                  type: 'text' },
@@ -219,7 +248,7 @@ export const TABS = [
       { key: 'activity_type',   label: 'Activity Type',                                type: 'select', options: ['Department Meeting', 'Alumni Interaction', 'Parent–Teacher Meet', 'Other'], required: true },
       { key: 'start_datetime',  label: 'Start Date & Time',                            type: 'datetime', required: true },
       { key: 'end_time',        label: 'End Time',                                     type: 'text' },
-      { key: 'academic_year',   label: 'Academic Year',                                type: 'text',   required: true },
+      { key: 'academic_year',   label: 'Academic Year',                                type: 'select', options: ACADEMIC_YEARS,   required: true },
       { key: 'venue',           label: 'Venue',                                        type: 'text',   required: true },
       { key: 'organizer',       label: 'Organizer / Coordinator',                      type: 'text' },
       { key: 'alumni_details',  label: 'Details of Alumni / Visiting Person',          type: 'textarea' },
@@ -240,7 +269,7 @@ export const TABS = [
       { key: 'expert_affiliation',  label: 'Affiliation of Expert',                    type: 'text' },
       { key: 'start_date',          label: 'Start Date',                               type: 'date',   required: true },
       { key: 'end_date',            label: 'End Date',                                 type: 'date',   required: true },
-      { key: 'academic_year',       label: 'Academic Year',                            type: 'text',   required: true },
+      { key: 'academic_year',       label: 'Academic Year',                            type: 'select', options: ACADEMIC_YEARS,   required: true },
       { key: 'no_of_days',          label: 'No. of Days',                              type: 'number' },
       { key: 'venue',               label: 'Venue',                                    type: 'text' },
       { key: 'organizer',           label: 'Organizer / Coordinator',                  type: 'text' },
@@ -275,7 +304,7 @@ export const TABS = [
     description: 'SWAYAM, NPTEL and other approved MOOC certifications obtained.',
     fields: [
       { key: 'course_name',    label: 'Name of Course Passed',                         type: 'text',   required: true },
-      { key: 'academic_year',  label: 'Academic Year',                                  type: 'text',   required: true },
+      { key: 'academic_year',  label: 'Academic Year',                                  type: 'select', options: ACADEMIC_YEARS,   required: true },
       { key: 'offered_by',     label: 'Course Offered By',                              type: 'text',   required: true },
       { key: 'grade_obtained', label: 'Grade Obtained',                                 type: 'text',   required: true },
       ...SDG, ...PROOF,
@@ -288,7 +317,7 @@ export const TABS = [
     description: 'Courses developed for SWAYAM / NPTEL / e-PG Pathshala and other platforms.',
     fields: [
       { key: 'course_name',   label: 'Name of Course Developed',                       type: 'text',   required: true },
-      { key: 'academic_year', label: 'Academic Year',                                   type: 'text',   required: true },
+      { key: 'academic_year', label: 'Academic Year',                                   type: 'select', options: ACADEMIC_YEARS,   required: true },
       { key: 'coauthors',     label: 'Name of Co-authors (if any)',                     type: 'text' },
       { key: 'platform_name', label: 'Platform (SWAYAM / NPTEL / e-PG / Other)',        type: 'text',   required: true },
       { key: 'online_link',   label: 'Online Link of the Course',                       type: 'url' },
@@ -304,7 +333,7 @@ export const TABS = [
       { key: 'event_name',          label: 'Name of Event',                            type: 'text',   required: true },
       { key: 'activity_type',       label: 'Activity Type',                             type: 'select', options: ['Hackathon', 'Ideathon', 'Open Research', 'Innovation Contest', 'Internship Mentoring', 'Other'], required: true },
       { key: 'activity_type_other', label: 'Specify if Other',                          type: 'text',   conditionalOn: { key: 'activity_type', value: 'Other' } },
-      { key: 'academic_year',       label: 'Academic Year',                             type: 'text',   required: true },
+      { key: 'academic_year',       label: 'Academic Year',                             type: 'select', options: ACADEMIC_YEARS,   required: true },
       { key: 'start_date',          label: 'Start Date',                                type: 'date' },
       { key: 'end_date',            label: 'End Date',                                  type: 'date' },
       { key: 'place',               label: 'Place of Event',                            type: 'text' },
@@ -321,7 +350,7 @@ export const TABS = [
     fields: [
       { key: 'training_name',    label: 'Name of Internship / Training / Collaboration', type: 'text',   required: true },
       { key: 'activity_type',    label: 'Activity Type',                                  type: 'select', options: ['Industry Internship', 'Research Collaboration', 'Training Program', 'FDP', 'Other'], required: true },
-      { key: 'academic_year',    label: 'Academic Year',                                  type: 'text',   required: true },
+      { key: 'academic_year',    label: 'Academic Year',                                  type: 'select', options: ACADEMIC_YEARS,   required: true },
       { key: 'start_date',       label: 'Start Date',                                     type: 'date' },
       { key: 'end_date',         label: 'End Date',                                       type: 'date' },
       { key: 'duration_days',    label: 'Duration (No. of Days)',                         type: 'number' },
@@ -339,7 +368,7 @@ export const TABS = [
     description: 'Faculty invited as resource persons for STTP / FDP / Expert Talks elsewhere.',
     fields: [
       { key: 'event_name',    label: 'Name of STTP / FDP / Expert Talk',               type: 'text',   required: true },
-      { key: 'academic_year', label: 'Academic Year',                                   type: 'text',   required: true },
+      { key: 'academic_year', label: 'Academic Year',                                   type: 'select', options: ACADEMIC_YEARS,   required: true },
       { key: 'start_date',    label: 'Start Date',                                      type: 'date',   required: true },
       { key: 'end_date',      label: 'End Date',                                        type: 'date' },
       { key: 'location',      label: 'Location',                                        type: 'text',   required: true },
@@ -354,7 +383,7 @@ export const TABS = [
     description: 'Industrial visits organized for students.',
     fields: [
       { key: 'faculty_coordinator',    label: 'Faculty Coordinator of Visit',          type: 'text',   required: true },
-      { key: 'academic_year',          label: 'Academic Year',                          type: 'text',   required: true },
+      { key: 'academic_year',          label: 'Academic Year',                          type: 'select', options: ACADEMIC_YEARS,   required: true },
       { key: 'industry_name',          label: 'Name of Industry / Organization',        type: 'text',   required: true },
       { key: 'industry_address',       label: 'Address (City, State)',                  type: 'text',   required: true },
       { key: 'visit_date',             label: 'Date of Visit',                          type: 'date',   required: true },
@@ -376,7 +405,7 @@ export const TABS = [
     table: 'tab17_innovation_courses', icon: '💼',
     description: 'Courses related to Innovation, Entrepreneurship, and IPR.',
     fields: [
-      { key: 'academic_year',  label: 'Academic Year',                                  type: 'text',   required: true },
+      { key: 'academic_year',  label: 'Academic Year',                                  type: 'select', options: ACADEMIC_YEARS,   required: true },
       { key: 'course_title',   label: 'Title of Course',                                type: 'text',   required: true },
       { key: 'course_code',    label: 'Course Code',                                    type: 'text',   required: true },
       { key: 'course_type',    label: 'Type of Course',                                 type: 'select', options: ['Core Course', 'Elective Course'], required: true },
@@ -393,7 +422,7 @@ export const TABS = [
     fields: [
       { key: 'roll_no',        label: 'Roll No.',                                       type: 'text',   required: true },
       { key: 'student_name',   label: 'Student Name',                                   type: 'text',   required: true },
-      { key: 'academic_year',  label: 'Academic Year (Batch)',                           type: 'text',   required: true },
+      { key: 'academic_year',  label: 'Academic Year (Batch)',                           type: 'select', options: ACADEMIC_YEARS,   required: true },
       { key: 'branch',         label: 'Branch',                                          type: 'text',   required: true },
       { key: 'cpi',            label: 'CPI',                                             type: 'number' },
       { key: 'placement_type', label: 'Placement Type',                                  type: 'select', options: ['Placed via Campus', 'Placed Independently', 'Own Business', 'Higher Studies', 'Other'], required: true },
@@ -428,7 +457,7 @@ export const TABS = [
     description: 'Institution seed money / internal research grants received.',
     fields: [
       { key: 'project_title',        label: 'Project Title / Support for Activity',    type: 'text',     required: true },
-      { key: 'academic_year',        label: 'Academic Year',                            type: 'text',     required: true },
+      { key: 'academic_year',        label: 'Academic Year',                            type: 'select', options: ACADEMIC_YEARS,     required: true },
       { key: 'duration',             label: 'Duration',                                 type: 'text' },
       { key: 'amount_lacs',          label: 'Amount (Lacs ₹)',                          type: 'number',   required: true },
       { key: 'amount_utilized_lacs', label: 'Amount Utilized (Lacs ₹)',                type: 'number' },
@@ -447,5 +476,4 @@ export const ADMIN_TAB_MAP = {
 }
 
 export const ADMINS        = ['Salman', 'Krunal', 'Vivek Jaiswal', 'Anirudh', 'Abhinaya']
-export const ACADEMIC_YEARS = ['2024-25','2023-24','2022-23','2021-22','2020-21','2019-20']
 export const getTab         = id => TABS.find(t => t.id === id)

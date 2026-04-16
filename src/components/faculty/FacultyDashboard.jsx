@@ -29,6 +29,29 @@ function OnboardingBanner({ filledTabs, onDismiss }) {
   )
 }
 
+function AnnouncementBanner({ announcements }) {
+  if (!announcements?.length) return null
+  const typeStyles = {
+    info:    'bg-blue-50  dark:bg-blue-900/20  border-blue-200  dark:border-blue-700  text-blue-800  dark:text-blue-300',
+    warning: 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-700 text-amber-800 dark:text-amber-300',
+    urgent:  'bg-red-50   dark:bg-red-900/20   border-red-200   dark:border-red-700   text-red-800   dark:text-red-300',
+  }
+  const typeIcons = { info: 'ℹ️', warning: '⚠️', urgent: '🚨' }
+  return (
+    <div className="space-y-2 mb-4">
+      {announcements.map(ann => (
+        <div key={ann.id} className={`border rounded-xl px-4 py-3 flex items-start gap-3 ${typeStyles[ann.type] || typeStyles.info}`}>
+          <span className="flex-shrink-0 text-base">{typeIcons[ann.type] || 'ℹ️'}</span>
+          <div>
+            <p className="font-semibold text-sm">{ann.title}</p>
+            <p className="text-xs mt-0.5 opacity-80">{ann.body}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 function DeadlineBanner({ deadline, message }) {
   if (!deadline) return null
   const daysLeft = Math.ceil((new Date(deadline) - new Date()) / 86400000)
@@ -72,8 +95,9 @@ export default function FacultyDashboard() {
   }
   const [counts,   setCounts]   = useState({})
   const [loading,  setLoading]  = useState(true)
-  const [deadline, setDeadline] = useState(null)
-  const [message,  setMessage]  = useState('')
+  const [deadline,      setDeadline]      = useState(null)
+  const [message,       setMessage]       = useState('')
+  const [announcements, setAnnouncements] = useState([])
 
   useEffect(() => {
     async function load() {
@@ -88,6 +112,7 @@ export default function FacultyDashboard() {
       ])
       setDeadline(settingsRes.deadline || null)
       setMessage(settingsRes.message || '')
+      setAnnouncements(settingsRes.announcements || [])
       setCounts(Object.fromEntries(countResults))
       setLoading(false)
     }
@@ -106,12 +131,18 @@ export default function FacultyDashboard() {
         <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">
           {loading ? 'Loading your data…' : `${filledTabs} of ${totalTabs} sections have entries`}
         </p>
+        <Link to="/faculty/profile" className="mt-1 text-xs text-pdeu-blue dark:text-blue-400 hover:underline">
+          🖨️ Print / Save my data summary →
+        </Link>
       </div>
 
       {/* Onboarding banner — shown only on first visit */}
       {showOnboarding && (
         <OnboardingBanner filledTabs={filledTabs} onDismiss={dismissOnboarding} />
       )}
+
+      {/* Announcements */}
+      <AnnouncementBanner announcements={announcements} />
 
       {/* Deadline banner */}
       <DeadlineBanner deadline={deadline} message={message} />

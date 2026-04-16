@@ -12,30 +12,25 @@ const HEADERS = {
 }
 
 // Download a proof PDF by its stored GitHub path e.g. "proofs/tab5/usr_abc/file.pdf"
+// Uses the raw content API which works for files up to 100 MB without size limits.
 async function fetchProofBlob(githubPath) {
-  const res = await fetch(`${API}/contents/${githubPath}`, { headers: HEADERS })
-  if (!res.ok) throw new Error(`GitHub API error ${res.status} for ${githubPath}`)
-  const meta = await res.json()
+  // Use the raw media type — returns the file bytes directly, no base64, no size limit
+  const res = await fetch(`${API}/contents/${githubPath}`, {
+    headers: {
+      Authorization: `Bearer ${PAT}`,
+      Accept: 'application/vnd.github.raw+json',  // returns raw bytes, not base64 JSON
+    },
+  })
 
-  // For files under 1 MB the content is inline base64
-  // For larger files use the download_url GitHub provides
-  if (meta.content && !meta.truncated) {
-    const binary = atob(meta.content.replace(/\n/g, ''))
-    const bytes  = new Uint8Array(binary.length)
-    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
-    return { blob: new Blob([bytes], { type: 'application/pdf' }), name: meta.name }
-  }
+  if (res.status === 404) throw new Error(`File not found: ${githubPath}`)
+  if (!res.ok)            throw new Error(`GitHub API error ${res.status} for ${githubPath}`)
 
-  // File > 1 MB — fetch via download_url (works with PAT auth)
-  if (meta.download_url) {
-    const dlRes = await fetch(meta.download_url, {
-      headers: { Authorization: `Bearer ${PAT}` },
-    })
-    if (!dlRes.ok) throw new Error(`Download failed (${dlRes.status}) for ${meta.name}`)
-    return { blob: await dlRes.blob(), name: meta.name }
-  }
+  // With raw media type the response body IS the file — no decoding needed
+  const blob = await res.blob()
 
-  throw new Error(`Cannot download ${githubPath} — no content or download_url`)
+  // Extract filename from path (last segment)
+  const name = githubPath.split('/').pop() || 'proof.pdf'
+  return { blob: new Blob([blob], { type: 'application/pdf' }), name }
 }
 
 // Build Excel buffer in-memory (without triggering browser download)
@@ -123,9 +118,16 @@ export default function ProofDownloader({ rows, columns, tab, label }) {
         const lastName = (row.facultyName || 'unknown').trim().split(/\s+/).pop()
         proofFolder.file(`${lastName}_${name}`, blob)
       } catch (e) {
-        console.warn(`Proof download failed for ${row.facultyName}:`, e.message)
+        console.warn(`Proof download failed for ${row.facultyName}: ${e.message}`)
         failed++
         setProgress(p => ({ ...p, failed }))
+        // Add a placeholder text file in the ZIP so admin knows what failed
+        proofFolder.file(
+          `FAILED_${(row.facultyName || 'unknown').split(' ').pop()}_proof-missing.txt`,
+          `Could not download proof for ${row.facultyName}.
+Path: ${row.drive_link}
+Error: ${e.message}`
+        )
       }
     }
 

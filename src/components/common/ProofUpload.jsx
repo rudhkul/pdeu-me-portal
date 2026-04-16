@@ -1,5 +1,5 @@
-import { useState, useRef } from 'react'
-import { uploadProof, buildFileName } from '../../lib/filestore'
+import { useEffect, useState, useRef } from 'react'
+import { uploadProof, buildFileName, openProofInBrowser, proofFileNameFromPath } from '../../lib/filestore'
 
 /**
  * PDF proof uploader — stores files in the private GitHub data repo.
@@ -11,7 +11,7 @@ import { uploadProof, buildFileName } from '../../lib/filestore'
  */
 export default function ProofUpload({
   fieldKey, register, setValue,
-  tabId, userId, facultyName, watchValues = {},
+  tabId, userId, facultyName, watchValues = {}, currentValue = '',
   required, error
 }) {
   const [status,   setStatus]   = useState('idle')   // idle | uploading | done | error
@@ -20,6 +20,22 @@ export default function ProofUpload({
   const [progress, setProgress] = useState(0)
   const [errMsg,   setErrMsg]   = useState('')
   const fileRef = useRef()
+
+  useEffect(() => {
+    if (!currentValue) {
+      if (status !== 'uploading') {
+        setStoredPath('')
+        setFileName('')
+        if (status === 'done') setStatus('idle')
+      }
+      return
+    }
+
+    setStoredPath(currentValue)
+    setFileName(proofFileNameFromPath(currentValue))
+    if (status !== 'uploading' && status !== 'done') setStatus('done')
+  }, [currentValue])
+
 
   const reg = register(fieldKey, {
     required: required ? 'Please upload a PDF proof file' : false,
@@ -88,7 +104,7 @@ export default function ProofUpload({
   return (
     <div className="space-y-2">
       {/* Hidden input holds the stored path value for react-hook-form */}
-      <input type="hidden" {...reg} value={storedPath} />
+      <input type="hidden" {...reg} value={storedPath || currentValue || ''} readOnly />
 
       {/* ── Idle state — file picker ── */}
       {status === 'idle' && (
@@ -167,13 +183,29 @@ export default function ProofUpload({
                 </p>
               </div>
             </div>
-            <button
-              type="button"
-              onClick={clearUpload}
-              className="text-xs text-gray-400 hover:text-red-500 dark:hover:text-red-400 flex-shrink-0 whitespace-nowrap"
-            >
-              Replace
-            </button>
+            <div className="flex flex-col items-end gap-2 flex-shrink-0">
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    await openProofInBrowser(storedPath || currentValue)
+                  } catch (err) {
+                    setStatus('error')
+                    setErrMsg(err.message || 'Could not open the uploaded PDF.')
+                  }
+                }}
+                className="text-xs text-pdeu-blue hover:underline dark:text-blue-400 whitespace-nowrap"
+              >
+                View PDF
+              </button>
+              <button
+                type="button"
+                onClick={clearUpload}
+                className="text-xs text-gray-400 hover:text-red-500 dark:hover:text-red-400 whitespace-nowrap"
+              >
+                Replace
+              </button>
+            </div>
           </div>
         </div>
       )}

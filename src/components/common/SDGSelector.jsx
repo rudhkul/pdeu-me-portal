@@ -1,23 +1,5 @@
-// ── 17 UN Sustainable Development Goals ──────────────────────
-export const SDG_LIST = [
-  { num: 1,  label: 'No Poverty' },
-  { num: 2,  label: 'Zero Hunger' },
-  { num: 3,  label: 'Good Health and Well-being' },
-  { num: 4,  label: 'Quality Education' },
-  { num: 5,  label: 'Gender Equality' },
-  { num: 6,  label: 'Clean Water and Sanitation' },
-  { num: 7,  label: 'Affordable and Clean Energy' },
-  { num: 8,  label: 'Decent Work and Economic Growth' },
-  { num: 9,  label: 'Industry, Innovation and Infrastructure' },
-  { num: 10, label: 'Reduced Inequalities' },
-  { num: 11, label: 'Sustainable Cities and Communities' },
-  { num: 12, label: 'Responsible Consumption and Production' },
-  { num: 13, label: 'Climate Action' },
-  { num: 14, label: 'Life Below Water' },
-  { num: 15, label: 'Life on Land' },
-  { num: 16, label: 'Peace, Justice and Strong Institutions' },
-  { num: 17, label: 'Partnerships for the Goals' },
-]
+import { SDG_LIST } from '../../config/tabs'
+
 
 // Colour strip per SDG (official UN palette)
 const SDG_COLORS = {

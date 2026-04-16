@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
-import { NavLink, useNavigate } from 'react-router-dom'
+import { NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useDarkMode } from '../hooks/useDarkMode'
 import { TABS } from '../config/tabs'
+import { getFacultyRecords } from '../lib/github'
+import { getStoredFileObjectUrl } from '../lib/filestore'
 import toast from 'react-hot-toast'
 
 function HamburgerIcon({ open }) {
@@ -38,18 +40,16 @@ function NavItem({ to, icon, label, open, end = false }) {
   )
 }
 
-// ── Mode switcher pill — only shown to admins ─────────────────
-function ModeSwitcher({ viewMode, switchView, open }) {
-  const isAdmin   = viewMode === 'admin'
+function ModeSwitcher({ viewMode, onSwitchView, open }) {
+  const isAdmin = viewMode === 'admin'
   const isFaculty = viewMode === 'faculty'
 
   if (!open) {
-    // Compact version when collapsed
     return (
       <div className="px-2 mb-2">
         <button
           title={isAdmin ? 'Switch to My Faculty Data' : 'Switch to Admin View'}
-          onClick={() => switchView(isAdmin ? 'faculty' : 'admin')}
+          onClick={() => onSwitchView(isAdmin ? 'faculty' : 'admin')}
           className="w-10 h-10 rounded-xl flex items-center justify-center text-lg
                      bg-pdeu-light dark:bg-gray-700 hover:bg-blue-100 dark:hover:bg-gray-600
                      transition-colors mx-auto"
@@ -67,7 +67,7 @@ function ModeSwitcher({ viewMode, switchView, open }) {
       </p>
       <div className="flex rounded-xl overflow-hidden border border-gray-200 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 p-1 gap-1">
         <button
-          onClick={() => switchView('admin')}
+          onClick={() => onSwitchView('admin')}
           className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-xs font-medium transition-all ${
             isAdmin
               ? 'bg-pdeu-blue text-white shadow-sm'
@@ -77,7 +77,7 @@ function ModeSwitcher({ viewMode, switchView, open }) {
           🛡️ Admin
         </button>
         <button
-          onClick={() => switchView('faculty')}
+          onClick={() => onSwitchView('faculty')}
           className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-xs font-medium transition-all ${
             isFaculty
               ? 'bg-white dark:bg-gray-800 text-pdeu-blue shadow-sm font-semibold'
@@ -98,12 +98,15 @@ function ModeSwitcher({ viewMode, switchView, open }) {
 
 export default function Layout({ children }) {
   const { session, signOut, viewMode, switchView } = useAuth()
-  const [dark, setDark]       = useDarkMode()
-  const navigate              = useNavigate()
-  const isAdmin               = session?.role === 'admin'
-  const showingFacultyView    = isAdmin && viewMode === 'faculty'
+  const [dark, setDark] = useDarkMode()
+  const navigate = useNavigate()
+  const location = useLocation()
+  const isAdmin = session?.role === 'admin'
+  const showingFacultyView = isAdmin && viewMode === 'faculty'
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [open, setOpen]       = useState(() => localStorage.getItem('sidebar_open') !== 'false')
+  const [open, setOpen] = useState(() => localStorage.getItem('sidebar_open') !== 'false')
+  const [profilePicturePath, setProfilePicturePath] = useState('')
+  const [profilePictureUrl, setProfilePictureUrl] = useState('')
 
   function toggleSidebar() {
     const next = !open
@@ -111,12 +114,96 @@ export default function Layout({ children }) {
     localStorage.setItem('sidebar_open', String(next))
   }
 
-  useEffect(() => { setMobileOpen(false) }, [navigate])
+  function handleSwitchView(mode) {
+    if (!isAdmin) return
+    switchView(mode)
+
+    if (mode === 'faculty') {
+      const adminTabMatch = location.pathname.match(/^\/faculty\/tab\/(.+)$/) || location.pathname.match(/^\/admin\/tab\/(.+)$/)
+      if (adminTabMatch?.[1]) {
+        navigate(`/faculty/tab/${adminTabMatch[1]}`)
+        return
+      }
+      navigate('/faculty')
+      return
+    }
+
+    const facultyTabMatch = location.pathname.match(/^\/faculty\/tab\/(.+)$/) || location.pathname.match(/^\/admin\/tab\/(.+)$/)
+    if (facultyTabMatch?.[1]) {
+      navigate(`/admin/tab/${facultyTabMatch[1]}`)
+      return
+    }
+    navigate('/admin')
+  }
+
+  useEffect(() => {
+    setMobileOpen(false)
+  }, [location.pathname])
+
   useEffect(() => {
     const fn = e => { if (e.key === 'Escape') setMobileOpen(false) }
     window.addEventListener('keydown', fn)
     return () => window.removeEventListener('keydown', fn)
   }, [])
+
+
+  useEffect(() => {
+    if (!session?.userId) {
+      setProfilePicturePath('')
+      return
+    }
+
+    let active = true
+
+    async function loadProfilePicturePath() {
+      try {
+        const records = await getFacultyRecords('tab1', session.userId)
+        const path = records?.[0]?.profile_picture || ''
+        if (active) setProfilePicturePath(path)
+      } catch {
+        if (active) setProfilePicturePath('')
+      }
+    }
+
+    loadProfilePicturePath()
+
+    const reload = () => loadProfilePicturePath()
+    window.addEventListener('pdeu-profile-updated', reload)
+    return () => {
+      active = false
+      window.removeEventListener('pdeu-profile-updated', reload)
+    }
+  }, [session?.userId])
+
+  useEffect(() => {
+    if (!profilePicturePath) {
+      setProfilePictureUrl('')
+      return
+    }
+
+    let active = true
+    let objectUrl = ''
+
+    async function loadProfilePicture() {
+      try {
+        const result = await getStoredFileObjectUrl(profilePicturePath)
+        objectUrl = result.objectUrl
+        if (!active) {
+          URL.revokeObjectURL(objectUrl)
+          return
+        }
+        setProfilePictureUrl(objectUrl)
+      } catch {
+        if (active) setProfilePictureUrl('')
+      }
+    }
+
+    loadProfilePicture()
+    return () => {
+      active = false
+      if (objectUrl) URL.revokeObjectURL(objectUrl)
+    }
+  }, [profilePicturePath])
 
   function handleSignOut() {
     signOut()
@@ -128,21 +215,21 @@ export default function Layout({ children }) {
     return (
       <>
         <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-0.5">
-
-          {/* Mode switcher — only for admins */}
           {isAdmin && (
-            <ModeSwitcher viewMode={viewMode} switchView={switchView} open={open} />
+            <ModeSwitcher viewMode={viewMode} onSwitchView={handleSwitchView} open={open} />
           )}
 
-          {/* Admin nav — shown when admin is in admin mode */}
           {isAdmin && viewMode === 'admin' && (
             <>
               {open && <p className="section-heading">Admin</p>}
-              <NavItem to="/admin"          icon="📊" label="Dashboard"       open={open} end />
-              <NavItem to="/admin/export"   icon="📥" label="Export Builder"   open={open} />
-              <NavItem to="/admin/users"    icon="👥" label="User Management"  open={open} />
-              <NavItem to="/admin/deadline" icon="⏰" label="Set Deadline"     open={open} />
+              <NavItem to="/admin" icon="📊" label="Dashboard" open={open} end />
+              <NavItem to="/admin/export" icon="📥" label="Export Builder" open={open} />
+              <NavItem to="/admin/users" icon="👥" label="User Management" open={open} />
+              <NavItem to="/admin/deadline" icon="⏰" label="Set Deadline" open={open} />
               <NavItem to="/admin/notifications" icon="📧" label="Email Notifications" open={open} />
+              <NavItem to="/admin/announcements" icon="📢" label="Announcements" open={open} />
+              <NavItem to="/admin/not-submitted" icon="📋" label="Submission Status" open={open} />
+              <NavItem to="/admin/passwords" icon="🔑" label="Reset Passwords" open={open} />
               {open && <p className="section-heading mt-3">All Tabs</p>}
               {TABS.map(tab => (
                 <NavItem key={tab.id} to={`/admin/tab/${tab.id}`}
@@ -151,7 +238,6 @@ export default function Layout({ children }) {
             </>
           )}
 
-          {/* Faculty nav — shown to regular faculty OR admin in faculty mode */}
           {(!isAdmin || viewMode === 'faculty') && (
             <>
               {open && (
@@ -160,6 +246,7 @@ export default function Layout({ children }) {
                 </p>
               )}
               <NavItem to="/faculty" icon="🏠" label="Dashboard" open={open} end />
+              <NavItem to="/faculty/profile" icon="🖨️" label="Print Summary" open={open} />
               {TABS.map(tab => (
                 <NavItem key={tab.id} to={`/faculty/tab/${tab.id}`}
                   icon={tab.icon} label={`${tab.number}. ${tab.name}`} open={open} />
@@ -168,11 +255,9 @@ export default function Layout({ children }) {
           )}
         </nav>
 
-        {/* Footer */}
         <div className="border-t border-gray-100 dark:border-gray-700 p-3 space-y-1">
           <NavItem to="/change-password" icon="🔒" label="Change Password" open={open} />
 
-          {/* Dark mode toggle */}
           <button
             onClick={() => setDark(d => !d)}
             className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm w-full
@@ -183,11 +268,13 @@ export default function Layout({ children }) {
             {open && <span>{dark ? 'Light Mode' : 'Dark Mode'}</span>}
           </button>
 
-          {/* User info + sign out */}
           <div className="flex items-center gap-2 px-1 pt-1">
-            <div className="w-8 h-8 rounded-full bg-pdeu-blue text-white text-xs flex items-center justify-center font-bold flex-shrink-0 relative">
-              {session?.fullName?.[0]?.toUpperCase() || '?'}
-              {/* Small badge when admin is in faculty mode */}
+            <div className="w-8 h-8 rounded-full bg-pdeu-blue text-white text-xs flex items-center justify-center font-bold flex-shrink-0 relative overflow-hidden">
+              {profilePictureUrl ? (
+                <img src={profilePictureUrl} alt={session?.fullName || 'Profile'} className="w-full h-full object-cover" />
+              ) : (
+                session?.fullName?.[0]?.toUpperCase() || '?'
+              )}
               {showingFacultyView && (
                 <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-amber-400 rounded-full border border-white dark:border-gray-800 text-[8px] flex items-center justify-center">
                   F
@@ -225,14 +312,11 @@ export default function Layout({ children }) {
 
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden">
-
-      {/* Mobile overlay */}
       {mobileOpen && (
         <div className="fixed inset-0 bg-black/40 z-20 lg:hidden"
           onClick={() => setMobileOpen(false)} />
       )}
 
-      {/* Mobile drawer */}
       <aside className={`
         fixed top-0 left-0 h-full w-64 bg-white dark:bg-gray-800
         border-r border-gray-100 dark:border-gray-700
@@ -254,7 +338,6 @@ export default function Layout({ children }) {
         <SidebarContent />
       </aside>
 
-      {/* Desktop sidebar */}
       <aside className={`
         hidden lg:flex flex-col flex-shrink-0 bg-white dark:bg-gray-800
         border-r border-gray-100 dark:border-gray-700
@@ -282,9 +365,7 @@ export default function Layout({ children }) {
         <SidebarContent />
       </aside>
 
-      {/* Main content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Mobile top bar */}
         <div className="lg:hidden flex items-center gap-3 px-4 py-3 bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700">
           <button onClick={() => setMobileOpen(true)}
             className="w-10 h-10 flex items-center justify-center rounded-lg
@@ -295,7 +376,7 @@ export default function Layout({ children }) {
           <p className="font-bold text-pdeu-blue text-sm">ME Dept Portal</p>
           {isAdmin && (
             <button
-              onClick={() => switchView(viewMode === 'admin' ? 'faculty' : 'admin')}
+              onClick={() => handleSwitchView(viewMode === 'admin' ? 'faculty' : 'admin')}
               className="ml-2 text-xs px-2 py-1 rounded-lg bg-pdeu-light dark:bg-gray-700 text-pdeu-blue font-medium"
             >
               {viewMode === 'admin' ? '👤 My Data' : '🛡️ Admin'}

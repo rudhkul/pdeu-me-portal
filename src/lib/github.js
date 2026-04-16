@@ -9,10 +9,10 @@ const HEADERS = {
 }
 
 function handleError(status, path) {
-  if (status === 401) throw new Error('GitHub token has expired. Please contact the administrator to renew the access token.')
-  if (status === 403) throw new Error('Access denied. The GitHub token may not have permission for this repository.')
-  if (status === 409) throw new Error('Data conflict — someone else may have saved at the same time. Please refresh and try again.')
-  if (status >= 500)  throw new Error('GitHub is experiencing issues. Please try again in a few minutes.')
+  if (status === 401) throw new Error('GitHub token has expired. Contact the administrator.')
+  if (status === 403) throw new Error('Access denied. GitHub token may lack permission.')
+  if (status === 409) throw new Error('Data conflict — someone else saved at the same time. Refresh and try again.')
+  if (status >= 500)  throw new Error('GitHub is down. Please try again in a few minutes.')
   if (status !== 404) throw new Error(`GitHub error (${status}) for ${path}`)
 }
 
@@ -43,7 +43,6 @@ export async function listDir(path) {
   return Array.isArray(items) ? items : []
 }
 
-// ── Portal settings (deadline, announcements) ─────────────────
 export async function getSettings() {
   const { data } = await readJSON('meta/settings.json')
   return data || {}
@@ -53,7 +52,6 @@ export async function saveSettings(settings) {
   await writeJSON('meta/settings.json', settings, sha)
 }
 
-// ── User management ───────────────────────────────────────────
 export async function getUsers() {
   const { data } = await readJSON('users.json')
   return (data || []).map(({ passwordHash, salt, ...rest }) => rest)
@@ -70,7 +68,6 @@ export async function getAllFaculties() {
   return (data || []).filter(u => u.role === 'faculty').map(({ passwordHash, salt, ...rest }) => rest)
 }
 
-// ── Faculty record CRUD ───────────────────────────────────────
 export async function getFacultyRecords(tabId, userId) {
   const { data } = await readJSON(`records/${tabId}/${userId}.json`)
   return data || []
@@ -90,7 +87,10 @@ export async function addRecord(tabId, userId, newRecord) {
   const path          = `records/${tabId}/${userId}.json`
   const { data, sha } = await readJSON(path)
   const now           = new Date().toISOString()
-  const updated       = [...(data || []), { ...newRecord, id: crypto.randomUUID(), createdAt: now, updatedAt: now }]
+  const updated       = [...(data || []), {
+    ...newRecord, id: crypto.randomUUID(), createdAt: now, updatedAt: now,
+    _verified: false,  // new records start unverified
+  }]
   await writeJSON(path, updated, sha)
   return updated
 }
@@ -99,10 +99,24 @@ export async function updateRecord(tabId, userId, recordId, changes) {
   const path          = `records/${tabId}/${userId}.json`
   const { data, sha } = await readJSON(path)
   const updated       = (data || []).map(r =>
-    r.id === recordId ? { ...r, ...changes, updatedAt: new Date().toISOString() } : r
+    r.id === recordId
+      ? { ...r, ...changes, updatedAt: new Date().toISOString(), _changedFields: getChangedFields(r, changes) }
+      : r
   )
   await writeJSON(path, updated, sha)
   return updated
+}
+
+// Track which fields changed for audit trail
+function getChangedFields(original, changes) {
+  const changed = []
+  for (const key of Object.keys(changes)) {
+    if (key.startsWith('_')) continue
+    if (String(original[key] ?? '') !== String(changes[key] ?? '')) {
+      changed.push(key)
+    }
+  }
+  return changed
 }
 
 export async function deleteRecord(tabId, userId, recordId) {
@@ -115,4 +129,15 @@ export async function deleteRecord(tabId, userId, recordId) {
 
 export async function adminDeleteRecord(tabId, userId, recordId) {
   return deleteRecord(tabId, userId, recordId)
+}
+
+// Admin: toggle verified status on a record
+export async function toggleVerified(tabId, userId, recordId, verified) {
+  const path          = `records/${tabId}/${userId}.json`
+  const { data, sha } = await readJSON(path)
+  const updated       = (data || []).map(r =>
+    r.id === recordId ? { ...r, _verified: verified, _verifiedAt: new Date().toISOString() } : r
+  )
+  await writeJSON(path, updated, sha)
+  return updated
 }
