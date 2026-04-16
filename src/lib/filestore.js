@@ -54,15 +54,20 @@ async function uploadBinaryFile(file, filePath, commitMessage) {
 }
 
 async function fetchStoredBlob(storedPath) {
-  // /api/raw/ returns the raw file bytes via the worker
   const res = await fetch(`${RAW}/${storedPath}`)
 
   if (res.status === 404) throw new Error(`File not found: ${storedPath}`)
   if (!res.ok)            throw new Error(`Download error ${res.status} for ${storedPath}`)
 
-  const blob     = await res.blob()
+  // Derive MIME type from file extension — never trust the response header
+  const ext = storedPath.split('.').pop().toLowerCase()
+  const mimeMap = { pdf: 'application/pdf', png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp' }
+  const mimeType = mimeMap[ext] || res.headers.get('Content-Type') || 'application/octet-stream'
+
+  const bytes    = await res.arrayBuffer()
+  const blob     = new Blob([bytes], { type: mimeType })
   const fileName = storedPath.split('/').pop() || 'file'
-  return { blob, fileName, contentType: blob.type || '' }
+  return { blob, fileName, contentType: mimeType }
 }
 
 // ── Public API ────────────────────────────────────────────────
