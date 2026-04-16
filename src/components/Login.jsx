@@ -42,10 +42,8 @@ export default function Login() {
         {/* Top logo */}
         <div className="flex items-center gap-3">
           {/* White circle bg so dark SVG is visible */}
-          <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">
-            <img src={ICON} alt="DIC" className="h-8 w-auto"
-              style={{ filter: 'brightness(0) invert(1)' }} />
-          </div>
+          <img src={ICON} alt="DIC Mechanical" className="h-10 w-auto"
+            style={{ filter: 'brightness(0) invert(1)' }} />
           <div>
             <p className="text-white font-bold text-base leading-tight">DIC Mechanical</p>
             <p className="text-white/50 text-xs">PDEU</p>
@@ -56,10 +54,8 @@ export default function Login() {
         <div>
           {/* Big icon */}
           <div className="mb-8">
-            <div className="w-24 h-24 rounded-2xl bg-white/10 flex items-center justify-center mb-6">
-              <img src={ICON} alt="DIC Mechanical" className="h-16 w-auto"
-                style={{ filter: 'brightness(0) invert(1)' }} />
-            </div>
+            <img src={ICON} alt="DIC Mechanical" className="w-48 h-auto mb-6"
+              style={{ filter: 'brightness(0) invert(0.85)' }} />
             <h1 className="text-white text-4xl font-bold leading-tight mb-3">
               ME Department<br />Data Portal
             </h1>
@@ -93,10 +89,8 @@ export default function Login() {
 
         {/* Mobile logo — only on small screens */}
         <div className="lg:hidden flex flex-col items-center mb-8">
-          <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center mb-3">
-            <img src={ICON} alt="DIC Mechanical" className="h-10 w-auto"
-              style={{ filter: 'brightness(0) invert(1)' }} />
-          </div>
+          <img src={ICON} alt="DIC Mechanical" className="w-32 h-auto mb-3"
+            style={{ filter: 'brightness(0) invert(1)' }} />
           <p className="text-white font-bold text-xl">DIC Mechanical</p>
           <p className="text-white/50 text-sm">ME Department Data Portal</p>
         </div>
