@@ -7,6 +7,8 @@ import { getFacultyRecords } from '../lib/github'
 import { getStoredFileObjectUrl } from '../lib/filestore'
 import toast from 'react-hot-toast'
 
+const ICON = `${import.meta.env.BASE_URL}dic-mechanical-icon-primary-refined.svg`
+
 function HamburgerIcon({ open }) {
   return (
     <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -324,10 +326,10 @@ export default function Layout({ children }) {
         ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
         <div className="flex items-center gap-3 px-4 py-4 border-b border-gray-100 dark:border-gray-700 min-h-[64px]">
-          <img src="/dic-mechanical-icon-primary-refined.svg" alt="DIC" className="h-8 w-auto flex-shrink-0" />
+          <img src={ICON} alt="DIC Mechanical" className="h-10 w-auto flex-shrink-0" />
           <div className="min-w-0">
-            <p className="font-bold text-[#003087] dark:text-white text-sm">DIC Mechanical</p>
-            <p className="text-xs text-gray-400">ME Dept Portal</p>
+            <p className="font-bold text-[#003087] dark:text-white text-sm leading-tight">DIC Mechanical</p>
+            <p className="text-xs text-gray-400 leading-tight">ME Dept Portal</p>
           </div>
           <button onClick={() => setMobileOpen(false)}
             className="ml-auto w-9 h-9 flex items-center justify-center rounded-lg
@@ -345,11 +347,11 @@ export default function Layout({ children }) {
         ${open ? 'w-64' : 'w-16'}
       `}>
         <div className="flex items-center gap-3 px-3 py-4 border-b border-gray-100 dark:border-gray-700 min-h-[64px]">
-          <img src="/dic-mechanical-icon-primary-refined.svg" alt="DIC" className="h-8 w-auto flex-shrink-0" />
+          <img src={ICON} alt="DIC Mechanical" className="h-10 w-auto flex-shrink-0" />
           {open && (
             <div className="min-w-0 flex-1">
-              <p className="font-bold text-[#003087] dark:text-white text-sm truncate">DIC Mechanical</p>
-              <p className="text-xs text-gray-400">ME Dept Portal</p>
+              <p className="font-bold text-[#003087] dark:text-white text-sm truncate leading-tight">DIC Mechanical</p>
+              <p className="text-xs text-gray-400 leading-tight">ME Dept Portal</p>
             </div>
           )}
           <button
@@ -372,7 +374,7 @@ export default function Layout({ children }) {
                        text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700">
             <HamburgerIcon open={false} />
           </button>
-          <img src="/dic-mechanical-icon-primary-refined.svg" alt="DIC" className="h-7 w-auto" />
+          <img src={ICON} alt="DIC Mechanical" className="h-8 w-auto" />
           <p className="font-bold text-[#003087] dark:text-white text-sm">DIC Mechanical</p>
           {isAdmin && (
             <button
@@ -392,7 +394,7 @@ export default function Layout({ children }) {
         {/* Footer */}
         <footer className="border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 px-6 py-3 flex flex-wrap items-center justify-between gap-2 text-xs text-gray-400 dark:text-gray-500">
           <div className="flex items-center gap-2">
-            <img src="/dic-mechanical-icon-primary-refined.svg" alt="DIC Mechanical" className="h-5 w-auto opacity-60" />
+            <img src={ICON} alt="DIC Mechanical" className="h-5 w-auto opacity-60" />
             <span>
               Powered by <span className="font-medium text-gray-500 dark:text-gray-400">DIC Mechanical</span>
               &nbsp;·&nbsp;
