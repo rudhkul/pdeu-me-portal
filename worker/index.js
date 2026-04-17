@@ -2,22 +2,43 @@
  * PDEU ME Portal — Cloudflare Worker Proxy
  *
  * Routes:
- *   GET  /api/contents/*      → GitHub Contents API (read / list)
- *   PUT  /api/contents/*      → GitHub Contents API (write)
- *   GET  /api/raw/*           → GitHub raw file bytes (PDFs, images)
- *   GET  /api/scholar/:id     → Google Scholar profile metrics (server-side fetch)
- *   GET  /api/health          → health check
- *
- * Secrets: GITHUB_PAT, GITHUB_OWNER, GITHUB_REPO, ALLOWED_ORIGIN
+ *   GET  /api/contents/*    → GitHub Contents API (read / list)
+ *   PUT  /api/contents/*    → GitHub Contents API (write)
+ *   GET  /api/raw/*         → GitHub raw file bytes (PDFs, images)
+ *   GET  /api/scholar/:id   → Google Scholar metrics (server-side fetch)
+ *   GET  /api/health        → health check
  */
 
 const GITHUB_API = 'https://api.github.com'
 
-function contentTypeFromPath(path) {
-  const ext = path.split('.').pop().toLowerCase()
-  return ({ pdf:'application/pdf', jpg:'image/jpeg', jpeg:'image/jpeg',
-            png:'image/png', webp:'image/webp', json:'application/json' })[ext]
-    || 'application/octet-stream'
+function mimeFromPath(p) {
+  const e = p.split('.').pop().toLowerCase()
+  return { pdf:'application/pdf', png:'image/png', jpg:'image/jpeg',
+           jpeg:'image/jpeg', webp:'image/webp' }[e] || 'application/octet-stream'
+}
+
+function parseNum(str) {
+  const n = parseInt((str || '').replace(/,/g, '').trim())
+  return isNaN(n) ? null : n
+}
+
+function extractScholarMetrics(html) {
+  // Target cells with class gsc_rsb_std — these are EXACTLY the stat numbers.
+  // Order in the page: citations-all, citations-since, h-all, h-since, i10-all, i10-since
+  const cells = [...html.matchAll(/class="gsc_rsb_std"[^>]*>([^<]*)</g)]
+  const nums  = cells.map(m => parseNum(m[1]))
+
+  // Only proceed if we got at least 6 numbers
+  if (nums.length < 6) return null
+
+  return {
+    citations:      nums[0],
+    citationsSince: nums[1],
+    hIndex:         nums[2],
+    hIndexSince:    nums[3],
+    i10Index:       nums[4],
+    i10Since:       nums[5],
+  }
 }
 
 export default {
@@ -27,112 +48,86 @@ export default {
     const url  = new URL(request.url)
     const path = url.pathname
 
-    // ── Health ────────────────────────────────────────────────
+    // ── Health ──────────────────────────────────────────────────
     if (path === '/api/health')
       return cors(JSON.stringify({ ok: true }), 200, env)
 
-    // ── Google Scholar metrics ────────────────────────────────
+    // ── Google Scholar ──────────────────────────────────────────
     if (path.startsWith('/api/scholar/')) {
-      const scholarId = path.replace('/api/scholar/', '').trim()
-      if (!scholarId || scholarId.length < 4)
+      const sid = decodeURIComponent(path.replace('/api/scholar/', '')).trim()
+
+      if (!sid || sid.length < 4)
         return cors(JSON.stringify({ error: 'Invalid Scholar ID' }), 400, env)
 
       try {
-        // Try the JSON-like endpoint Scholar uses internally for its own UI
-        // This is less likely to get bot-checked than the full HTML page
-        const scholarUrl =
-          `https://scholar.google.com/citations?user=${encodeURIComponent(scholarId)}&hl=en&view_op=list_works&pagesize=10`
-
-        const res = await fetch(scholarUrl, {
-          headers: {
-            'User-Agent':      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-            'Accept':          'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-            'Accept-Language': 'en-US,en;q=0.9',
-            'Accept-Encoding': 'gzip, deflate, br',
-            'Cache-Control':   'no-cache',
-            'Pragma':          'no-cache',
-            'Sec-Fetch-Dest':  'document',
-            'Sec-Fetch-Mode':  'navigate',
-            'Sec-Fetch-Site':  'none',
-            'Upgrade-Insecure-Requests': '1',
-          },
-          redirect: 'follow',
-        })
+        const res = await fetch(
+          `https://scholar.google.com/citations?user=${encodeURIComponent(sid)}&hl=en&pagesize=10`,
+          {
+            headers: {
+              'User-Agent':
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ' +
+                '(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+              'Accept':          'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+              'Accept-Language': 'en-US,en;q=0.9',
+              'Cache-Control':   'no-cache',
+            },
+            redirect: 'follow',
+          }
+        )
 
         if (!res.ok)
-          return cors(JSON.stringify({ error: `Scholar returned HTTP ${res.status}. Try again in a moment.` }), res.status, env)
+          return cors(JSON.stringify({ error: `Scholar returned HTTP ${res.status}` }), res.status, env)
 
         const html = await res.text()
 
-        // Detect bot/CAPTCHA page — Scholar serves these when it blocks the request
+        // Detect CAPTCHA / bot block
         if (
           html.includes('gs_captcha_ccl') ||
-          html.includes('Please show you') ||
           html.includes('not a robot') ||
-          html.includes('captcha') ||
-          html.length < 2000
+          html.includes('/sorry/') ||
+          html.length < 3000
         ) {
-          return cors(JSON.stringify({
-            error: 'blocked',
-            message: 'Google Scholar is rate-limiting this server. Enter your metrics manually below.',
-          }), 429, env)
+          return cors(JSON.stringify({ blocked: true }), 429, env)
         }
 
-        // Detect "profile not found"
-        if (html.includes('There is no Google Scholar profile') || html.includes('gsc_rch_cnt">0<')) {
-          return cors(JSON.stringify({ error: 'notfound', message: 'No Google Scholar profile found for this ID.' }), 404, env)
+        // Detect profile not found
+        if (html.includes('There is no Google Scholar profile') || !html.includes('gsc_rsb_std')) {
+          return cors(JSON.stringify({ notfound: true }), 404, env)
         }
 
-        // ── Parse stats table #gsc_rsb_st ──
-        // Structure: row1=header, row2=Citations, row3=h-index, row4=i10-index
-        // Each data row: <td>all-time</td><td>since 2019</td>
-        const tableMatch = html.match(/id="gsc_rsb_st"[\s\S]*?<tbody>([\s\S]*?)<\/tbody>/)
-        let citations = null, hIndex = null, i10Index = null
-        let citationsSince = null, hIndexSince = null, i10Since = null
+        // Extract stats — gsc_rsb_std cells are the ONLY place these numbers appear
+        const stats = extractScholarMetrics(html)
 
-        if (tableMatch) {
-          const rows = [...tableMatch[1].matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/g)]
-          const nums = rowHtml => {
-            const cells = [...rowHtml.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)]
-            return cells.map(c => {
-              const txt = c[1].replace(/<[^>]+>/g, '').trim()
-              const n   = parseInt(txt.replace(/,/g, ''))
-              return isNaN(n) ? null : n
-            })
-          }
-          if (rows[0]) { const n = nums(rows[0][1]); citations  = n[0]; citationsSince = n[1] }
-          if (rows[1]) { const n = nums(rows[1][1]); hIndex     = n[0]; hIndexSince    = n[1] }
-          if (rows[2]) { const n = nums(rows[2][1]); i10Index   = n[0]; i10Since       = n[1] }
+        if (!stats) {
+          return cors(JSON.stringify({ blocked: true, reason: 'parse_failed' }), 422, env)
         }
 
-        // ── Parse name, affiliation ──
-        const nameMatch = html.match(/id="gsc_prf_in"[^>]*>([^<]{2,80})<\/div>/)
-        const affMatch  = html.match(/class="gsc_prf_il"[^>]*>([^<]{2,120})</)
-        const pubCount  = (html.match(/class="gsc_a_tr"/g) || []).length
+        // Extract name
+        const nameM = html.match(/id="gsc_prf_in"[^>]*>([^<]{2,100})</)
+        // Extract affiliation (first gsc_prf_il div — institution line)
+        const affM  = html.match(/class="gsc_prf_il"[^>]*>([^<]{2,150})</)
+        // Count publication rows
+        const pubCount = (html.match(/class="gsc_a_tr"/g) || []).length
 
-        const data = {
-          name:          nameMatch ? nameMatch[1].trim() : null,
-          affiliation:   affMatch  ? affMatch[1].trim()  : null,
-          citations,      citationsSince,
-          hIndex,         hIndexSince,
-          i10Index,       i10Since,
-          publications:  pubCount  || null,
-          profileUrl:    `https://scholar.google.com/citations?user=${scholarId}`,
-          fetchedAt:     new Date().toISOString(),
-        }
-
-        return cors(JSON.stringify(data), 200, env, { 'Content-Type': 'application/json' })
+        return cors(JSON.stringify({
+          name:        nameM ? nameM[1].trim() : null,
+          affiliation: affM  ? affM[1].trim()  : null,
+          ...stats,
+          publications: pubCount || null,
+          profileUrl:  `https://scholar.google.com/citations?user=${sid}`,
+          fetchedAt:   new Date().toISOString(),
+        }), 200, env)
 
       } catch (e) {
         return cors(JSON.stringify({ error: e.message }), 502, env)
       }
     }
 
-    // ── GitHub Contents (JSON read/write) ─────────────────────
+    // ── GitHub Contents ──────────────────────────────────────────
     if (path.startsWith('/api/contents/')) {
       const repoPath  = path.replace('/api/contents/', '')
       const githubUrl = `${GITHUB_API}/repos/${env.GITHUB_OWNER}/${env.GITHUB_REPO}/contents/${repoPath}`
-      const headers   = {
+      const gh        = {
         Authorization:  `Bearer ${env.GITHUB_PAT}`,
         Accept:         'application/vnd.github.v3+json',
         'Content-Type': 'application/json',
@@ -140,37 +135,35 @@ export default {
       }
 
       if (request.method === 'GET') {
-        const res = await fetch(githubUrl, { headers })
-        return cors(await res.text(), res.status, env, { 'Content-Type': 'application/json' })
+        const r = await fetch(githubUrl, { headers: gh })
+        return cors(await r.text(), r.status, env, { 'Content-Type': 'application/json' })
       }
       if (request.method === 'PUT') {
-        const res = await fetch(githubUrl, { method: 'PUT', headers, body: await request.text() })
-        return cors(await res.text(), res.status, env, { 'Content-Type': 'application/json' })
+        const r = await fetch(githubUrl, { method: 'PUT', headers: gh, body: await request.text() })
+        return cors(await r.text(), r.status, env, { 'Content-Type': 'application/json' })
       }
       return cors('Method not allowed', 405, env)
     }
 
-    // ── GitHub Raw bytes (PDFs, images) ──────────────────────
+    // ── GitHub Raw bytes (PDFs / images) ────────────────────────
     if (path.startsWith('/api/raw/')) {
       const repoPath  = path.replace('/api/raw/', '')
       const githubUrl = `${GITHUB_API}/repos/${env.GITHUB_OWNER}/${env.GITHUB_REPO}/contents/${repoPath}`
 
-      const res = await fetch(githubUrl, {
+      const r = await fetch(githubUrl, {
         headers: {
           Authorization: `Bearer ${env.GITHUB_PAT}`,
           Accept:        'application/vnd.github.raw+json',
           'User-Agent':  'PDEU-ME-Portal-Worker/1.0',
         },
       })
-      if (!res.ok)
-        return cors(JSON.stringify({ error: `GitHub ${res.status}` }), res.status, env)
+      if (!r.ok) return cors(JSON.stringify({ error: `GitHub ${r.status}` }), r.status, env)
 
-      const bytes       = await res.arrayBuffer()
-      const contentType = contentTypeFromPath(repoPath)
+      const bytes = await r.arrayBuffer()
       return new Response(bytes, {
         status: 200,
         headers: {
-          'Content-Type':                contentType,
+          'Content-Type':                mimeFromPath(repoPath),
           'Content-Disposition':         `inline; filename="${repoPath.split('/').pop()}"`,
           'Access-Control-Allow-Origin': allowedOrigin(env),
           'Cache-Control':               'private, max-age=300',
