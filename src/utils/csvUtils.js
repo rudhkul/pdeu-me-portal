@@ -1,30 +1,45 @@
 // ── CSV utilities ─────────────────────────────────────────────
 
-// These field types are skipped in CSV (handled via UI only)
-const SKIP_TYPES = ['boolean', 'sdg_multi']
+// Field types skipped entirely in CSV — must be done via the portal UI
+const SKIP_TYPES = [
+  'boolean',
+  'sdg_multi',
+  'proof_upload',        // PDFs must be uploaded via the portal, not via CSV
+  'profile_picture_upload',
+  'faculty_select',      // interactive picker only
+]
+
+// Individual keys always excluded from CSV
+const SKIP_KEYS = [
+  'drive_link',   // auto-set by proof upload
+  'report_name',  // auto-generated from uploaded filename
+]
 
 /**
  * Generate and download a CSV template for a tab.
  */
 export function downloadTemplate(tab) {
-  const fields = tab.fields.filter(f => !SKIP_TYPES.includes(f.type))
+  const fields = tab.fields.filter(f =>
+    !SKIP_TYPES.includes(f.type) && !SKIP_KEYS.includes(f.key)
+  )
 
   const headers = fields.map(f => f.label)
   const hints   = fields.map(f => {
-    if (f.type === 'proof_link') return 'https://pdpu-my.sharepoint.com/... or https://drive.google.com/...'
-    if (f.type === 'select')     return f.options?.slice(0, 3).join(' / ') || ''
-    if (f.type === 'date')       return 'YYYY-MM-DD'
-    if (f.type === 'datetime')   return 'YYYY-MM-DD HH:MM'
-    if (f.type === 'number')     return '0'
-    if (f.type === 'url')        return 'https://'
-    if (f.type === 'file')       return 'https://onedrive.live.com/...'
-    if (f.key === 'report_name') return '5_Publications_DrRaviKant'
-    if (f.key === 'sdg_goals')   return '1,3,7  (comma-separated SDG numbers)'
+    if (f.type === 'select')   return f.options?.join(' / ') || ''
+    if (f.type === 'date')     return 'YYYY-MM-DD'
+    if (f.type === 'datetime') return 'YYYY-MM-DD HH:MM'
+    if (f.type === 'number')   return '0'
+    if (f.type === 'url')      return 'https://'
+    if (f.type === 'file')     return 'https://'
+    if (f.key === 'sdg_goals') return '1,3,7  (comma-separated SDG numbers)'
     return ''
   })
 
-  // Add a note row about SDG
-  const noteLine = ['NOTE: SDG Goals field — enter comma-separated SDG numbers e.g. 3,7,13 (1=No Poverty … 17=Partnerships)']
+  // Add a note row about SDG and PDFs
+  const noteLine = [
+    'NOTE: SDG Goals — enter comma-separated numbers e.g. 3,7,13 | ' +
+    'PDF proofs — upload after import via the Edit button in the portal'
+  ]
 
   const rows = [headers, hints, noteLine]
   const csv  = rows.map(r =>
@@ -61,11 +76,16 @@ export function parseCSV(text, tab) {
   const headerRow = parseLine(lines[0]).map(h => h.replace(/^"|"$/g, '').trim())
 
   // label → field key (case-insensitive, also support field keys directly)
+  // Exclude proof/upload fields — they're not in the template
+  const SKIP_TYPES_PARSE = ['boolean','sdg_multi','proof_upload','profile_picture_upload','faculty_select']
+  const SKIP_KEYS_PARSE  = ['drive_link','report_name']
   const labelToKey = {}
-  tab.fields.forEach(f => {
-    labelToKey[f.label.toLowerCase()] = f.key
-    labelToKey[f.key.toLowerCase()]   = f.key
-  })
+  tab.fields
+    .filter(f => !SKIP_TYPES_PARSE.includes(f.type) && !SKIP_KEYS_PARSE.includes(f.key))
+    .forEach(f => {
+      labelToKey[f.label.toLowerCase()] = f.key
+      labelToKey[f.key.toLowerCase()]   = f.key
+    })
 
   const colMap  = headerRow.map(h => labelToKey[h.toLowerCase()] || null)
   const unknown = headerRow.filter(h => !labelToKey[h.toLowerCase()] && !h.startsWith('NOTE'))

@@ -75,7 +75,17 @@ export default function ProofDownloader({ rows, columns, tab, label }) {
   const [progress, setProgress] = useState({ done: 0, total: 0, failed: 0 })
 
   // Rows that have a GitHub proof path (starts with "proofs/")
-  const withProof    = rows.filter(r => r.drive_link?.startsWith('proofs/'))
+  // Collect all proof paths from any field ending in _pdf or drive_link
+  const getProofPaths = r => {
+    const paths = []
+    if (r.drive_link?.startsWith('proofs/')) paths.push({ path: r.drive_link, label: 'proof' })
+    Object.entries(r).forEach(([k, v]) => {
+      if (k.endsWith('_pdf') && typeof v === 'string' && v.startsWith('proofs/'))
+        paths.push({ path: v, label: k.replace(/_pdf$/, '').replace(/_/g, '-') })
+    })
+    return paths
+  }
+  const withProof = rows.filter(r => getProofPaths(r).length > 0)
   const withoutProof = rows.length - withProof.length
 
   async function downloadZip() {
