@@ -9,7 +9,6 @@ import DynamicField from '../common/DynamicField'
 import CSVImport from '../common/CSVImport'
 import SharedPublications from './SharedPublications'
 import DOILookup from '../common/DOILookup'
-import PDFAutoFill from '../common/PDFAutoFill'
 import toast from 'react-hot-toast'
 import { openProofInBrowser } from '../../lib/filestore'
 
@@ -247,16 +246,7 @@ export default function TabForm() {
           </div>
 
           {tab.id === 'tab5' && !editing && <DOILookup onFill={handleDOIFill} facultyName={session.fullName} />}
-          {tab.id === 'tab5' && !editing && (
-            <PDFAutoFill disabled={saving} onFill={fields => {
-              // Map OCR-extracted fields to form field keys
-              if (fields.doi)         setValue('doi',                   fields.doi,         { shouldDirty: true })
-              if (fields.title)       setValue('title',                 fields.title,       { shouldDirty: true })
-              if (fields.authors)     setValue('coauthors',             fields.authors,     { shouldDirty: true })
-              if (fields.journal)     setValue('journal_or_conf_name',  fields.journal,     { shouldDirty: true })
-              if (fields.affiliation) setValue('coauthor_affiliations', fields.affiliation, { shouldDirty: true })
-            }} />
-          )}
+
 
           <form onSubmit={handleSubmit(onSubmit)}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
