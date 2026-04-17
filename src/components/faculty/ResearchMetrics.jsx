@@ -4,11 +4,16 @@ import { getFacultyRecords } from '../../lib/github'
 const WORKER = import.meta.env.VITE_WORKER_URL
 
 export default function ResearchMetrics({ session, localPubs = [] }) {
-  const [scholarData, setScholarData] = useState(null)
-  const [localData,   setLocalData]   = useState(null)
-  const [scholarId,   setScholarId]   = useState(null)
-  const [loading,     setLoading]     = useState(true)
-  const [error,       setError]       = useState('')
+  const [scholarData,  setScholarData]  = useState(null)
+  const [localData,    setLocalData]    = useState(null)
+  const [scholarId,    setScholarId]    = useState(null)
+  const [loading,      setLoading]      = useState(true)
+  const [status,       setStatus]       = useState('idle') // idle | ok | blocked | notfound | error
+  const [errorMsg,     setErrorMsg]     = useState('')
+
+  // Manual override state (when Scholar is blocked)
+  const [manual,       setManual]       = useState({ citations: '', hIndex: '', i10: '' })
+  const [showManual,   setShowManual]   = useState(false)
 
   useEffect(() => { load() }, [])
 
@@ -23,30 +28,45 @@ export default function ResearchMetrics({ session, localPubs = [] }) {
 
       if (!sid) { setLoading(false); return }
       setScholarId(sid)
-
-      // Fetch via Cloudflare Worker (server-side — bypasses CORS & Scholar bot blocks)
-      const res  = await fetch(`${WORKER}/api/scholar/${encodeURIComponent(sid)}`)
-      const data = await res.json()
-
-      if (data.error) {
-        setError(`Scholar: ${data.error}`)
-      } else if (data.citations === null && data.hIndex === null) {
-        setError('Scholar profile found but no metrics yet. Your profile may be too new.')
-      } else {
-        setScholarData(data)
-      }
-    } catch (e) {
-      setError('Could not reach Scholar. Showing local data only.')
-    }
+      await fetchScholar(sid)
+    } catch { setStatus('error'); setErrorMsg('Could not load profile.') }
     setLoading(false)
   }
 
+  async function fetchScholar(sid) {
+    try {
+      const res  = await fetch(`${WORKER}/api/scholar/${encodeURIComponent(sid)}`)
+      const data = await res.json()
+
+      if (res.status === 429 || data.error === 'blocked') {
+        setStatus('blocked')
+        setShowManual(true)
+        return
+      }
+      if (res.status === 404 || data.error === 'notfound') {
+        setStatus('notfound')
+        setErrorMsg('No Scholar profile found for ID: ' + sid)
+        return
+      }
+      if (data.error) {
+        setStatus('error')
+        setErrorMsg(data.error)
+        return
+      }
+      setScholarData(data)
+      setStatus('ok')
+    } catch {
+      setStatus('blocked')
+      setShowManual(true)
+    }
+  }
+
   function computeLocal(pubs) {
-    const published   = pubs.filter(p => ['Published','Accepted'].includes(p.status))
-    const journals    = published.filter(p => p.pub_type === 'Journal Paper')
-    const confs       = published.filter(p => p.pub_type === 'Conference Paper')
-    const withIF      = journals.filter(p => p.impact_factor && parseFloat(p.impact_factor) > 0)
-    const avgIF       = withIF.length
+    const published  = pubs.filter(p => ['Published','Accepted'].includes(p.status))
+    const journals   = published.filter(p => p.pub_type === 'Journal Paper')
+    const confs      = published.filter(p => p.pub_type === 'Conference Paper')
+    const withIF     = journals.filter(p => p.impact_factor && parseFloat(p.impact_factor) > 0)
+    const avgIF      = withIF.length
       ? (withIF.reduce((s,p) => s + parseFloat(p.impact_factor), 0) / withIF.length).toFixed(2)
       : null
     return {
@@ -72,33 +92,46 @@ export default function ResearchMetrics({ session, localPubs = [] }) {
 
   const L = localData
 
+  // Displayed Scholar metrics — either live or manual
+  const display = scholarData || (
+    (manual.citations || manual.hIndex || manual.i10) ? {
+      citations:  parseInt(manual.citations) || null,
+      hIndex:     parseInt(manual.hIndex)    || null,
+      i10Index:   parseInt(manual.i10)       || null,
+      name:       session.fullName,
+      profileUrl: scholarId ? `https://scholar.google.com/citations?user=${scholarId}` : null,
+    } : null
+  )
+
   return (
     <div className="card mb-6">
       <h2 className="font-semibold text-gray-800 dark:text-gray-100 mb-4">📊 Research Metrics</h2>
 
-      {/* ── Google Scholar metrics ── */}
-      {scholarData ? (
+      {/* ── Live Google Scholar metrics ── */}
+      {display && (
         <div className="mb-5">
           <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
             <div className="flex items-center gap-2">
-              <img src="https://scholar.google.com/favicon.ico" alt="Scholar" className="w-4 h-4" />
+              <span className="text-base">🎓</span>
               <p className="text-xs font-semibold text-gray-600 dark:text-gray-300">
-                Google Scholar — {scholarData.name}
+                Google Scholar {status === 'ok' ? '— Live' : '— Manual input'}
+                {display.name ? ` · ${display.name}` : ''}
               </p>
             </div>
-            <a href={scholarData.profileUrl} target="_blank" rel="noopener noreferrer"
-              className="text-xs text-pdeu-blue dark:text-blue-400 hover:underline">
-              View profile ↗
-            </a>
+            {display.profileUrl && (
+              <a href={display.profileUrl} target="_blank" rel="noopener noreferrer"
+                className="text-xs text-pdeu-blue dark:text-blue-400 hover:underline">
+                View profile ↗
+              </a>
+            )}
           </div>
 
-          {/* Main metric cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-2">
             {[
-              { icon: '📈', val: scholarData.citations,  sub: scholarData.citationsSince != null ? `${scholarData.citationsSince} since 2019` : null, lbl: 'Total Citations',   color: 'text-blue-600 dark:text-blue-400' },
-              { icon: '🎯', val: scholarData.hIndex,     sub: scholarData.hIndexSince    != null ? `${scholarData.hIndexSince} since 2019`    : null, lbl: 'h-index',           color: 'text-purple-600 dark:text-purple-400' },
-              { icon: '📊', val: scholarData.i10Index,   sub: scholarData.i10Since       != null ? `${scholarData.i10Since} since 2019`       : null, lbl: 'i10-index',         color: 'text-green-600 dark:text-green-400' },
-              { icon: '📄', val: scholarData.publications, sub: null,                                                                                  lbl: 'Works listed',      color: 'text-amber-600 dark:text-amber-400' },
+              { icon: '📈', val: display.citations,     sub: display.citationsSince != null ? `${display.citationsSince} since 2019` : null, lbl: 'Total Citations',  color: 'text-blue-600 dark:text-blue-400' },
+              { icon: '🎯', val: display.hIndex,        sub: display.hIndexSince    != null ? `${display.hIndexSince} since 2019`    : null, lbl: 'h-index',          color: 'text-purple-600 dark:text-purple-400' },
+              { icon: '📊', val: display.i10Index,      sub: display.i10Since       != null ? `${display.i10Since} since 2019`       : null, lbl: 'i10-index',        color: 'text-green-600 dark:text-green-400' },
+              { icon: '📄', val: display.publications,  sub: null,                                                                           lbl: 'Works listed',     color: 'text-amber-600 dark:text-amber-400' },
             ].map(m => (
               <div key={m.lbl}
                 className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-xl p-4 text-center">
@@ -110,33 +143,70 @@ export default function ResearchMetrics({ session, localPubs = [] }) {
             ))}
           </div>
 
-          <p className="text-xs text-gray-400 dark:text-gray-500">
-            Data fetched live from Google Scholar via Cloudflare proxy ·
-            Scholar ID: <span className="font-mono">{scholarId}</span> ·
-            {scholarData.fetchedAt && ` Fetched: ${new Date(scholarData.fetchedAt).toLocaleTimeString('en-IN')}`}
-          </p>
-        </div>
-      ) : (
-        <div className={`rounded-xl px-4 py-3 mb-5 text-sm border ${
-          error
-            ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-700 text-amber-700 dark:text-amber-400'
-            : 'bg-gray-50 dark:bg-gray-700/50 border-gray-100 dark:border-gray-700 text-gray-500 dark:text-gray-400'
-        }`}>
-          {error
-            ? <><span className="font-semibold">⚠️ </span>{error}</>
-            : <>
-                ℹ️ Add your <strong>Google Scholar ID</strong> in <strong>Tab 1 → Faculty Information</strong> to pull live citation metrics.
-                <br/>
-                <span className="text-xs mt-1 block">
-                  Your Scholar ID is the code after <code className="bg-gray-200 dark:bg-gray-600 px-1 rounded">user=</code> in your Scholar profile URL.
-                  e.g. <code className="bg-gray-200 dark:bg-gray-600 px-1 rounded">scholar.google.com/citations?user=<strong>ABC123xyz</strong></code>
-                </span>
-              </>
-          }
+          {status === 'ok' && (
+            <p className="text-xs text-gray-400 dark:text-gray-500">
+              Live from Google Scholar via Cloudflare proxy ·
+              {display.fetchedAt && ` ${new Date(display.fetchedAt).toLocaleString('en-IN')}`}
+            </p>
+          )}
         </div>
       )}
 
-      {/* ── Local tab5 metrics (always shown) ── */}
+      {/* ── Status messages ── */}
+      {!scholarId && (
+        <div className="bg-gray-50 dark:bg-gray-700/50 border border-gray-100 dark:border-gray-700 rounded-xl px-4 py-3 mb-5 text-sm text-gray-500 dark:text-gray-400">
+          ℹ️ Add your <strong>Google Scholar ID</strong> in <strong>Tab 1 → Faculty Information</strong> to show live citation metrics.
+          <div className="mt-1 text-xs">
+            Your Scholar ID is the code after <code className="bg-gray-200 dark:bg-gray-600 px-1 rounded">user=</code> in your profile URL:<br/>
+            <code className="text-pdeu-blue dark:text-blue-400">scholar.google.com/citations?user=<strong>WoYtYLwAAAAJ</strong></code>
+          </div>
+        </div>
+      )}
+
+      {status === 'notfound' && (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-xl px-4 py-3 mb-5 text-sm text-red-600 dark:text-red-400">
+          ❌ {errorMsg}
+        </div>
+      )}
+
+      {/* ── Blocked: manual input fallback ── */}
+      {status === 'blocked' && (
+        <div className="mb-5">
+          <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl px-4 py-3 mb-3 text-sm text-amber-700 dark:text-amber-400">
+            ⚠️ Google Scholar is rate-limiting automated requests right now (they do this periodically).
+            Enter your metrics manually from your{' '}
+            <a href={`https://scholar.google.com/citations?user=${scholarId}`}
+              target="_blank" rel="noopener noreferrer"
+              className="underline font-medium">Scholar profile ↗</a>
+            {' '}and they'll show on your profile.
+            <button onClick={() => fetchScholar(scholarId)}
+              className="ml-3 text-xs underline">Try again</button>
+          </div>
+
+          {showManual && (
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { key: 'citations', label: 'Total Citations', placeholder: 'e.g. 234' },
+                { key: 'hIndex',    label: 'h-index',         placeholder: 'e.g. 8'   },
+                { key: 'i10',       label: 'i10-index',       placeholder: 'e.g. 12'  },
+              ].map(f => (
+                <div key={f.key}>
+                  <label className="form-label">{f.label}</label>
+                  <input
+                    type="number"
+                    className="form-input"
+                    placeholder={f.placeholder}
+                    value={manual[f.key]}
+                    onChange={e => setManual(p => ({ ...p, [f.key]: e.target.value }))}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Local tab5 metrics (always) ── */}
       {L && L.total > 0 && (
         <>
           <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
