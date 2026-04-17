@@ -227,7 +227,7 @@ export default function DynamicField({ field, register, watch, setValue, errors,
         <FacultySelect
           fieldKey={field.key}
           register={register}
-          value={fv || ''}
+          value={watch ? (watch(field.key) || '') : ''}
           onChange={val => setValue(field.key, val, { shouldDirty: true })}
           currentFacultyName={tab?._facultyName}
         />
