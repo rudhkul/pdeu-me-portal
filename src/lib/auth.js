@@ -1,47 +1,53 @@
-/**
- * Auth — talks to the Cloudflare Worker's /api/auth/login endpoint.
- * Worker handles PBKDF2 verification + rate limiting server-side.
- * Browser stores the signed session token in localStorage.
- */
-
 import { sha256 } from 'js-sha256'
+import { readJSON } from './github'
 
 const WORKER      = import.meta.env.VITE_WORKER_URL
-const SESSION_KEY = 'pdeu_session'
 const SECRET      = import.meta.env.VITE_AUTH_SECRET || 'fallback-secret'
+const SESSION_KEY = 'pdeu_session'
+const SESSION_TTL = 8 * 60 * 60 * 1000
 
-// Legacy SHA-256 hash — used by ChangePassword and AdminUsers for existing accounts
+// SHA-256 hash — used by ChangePassword and AdminUsers
 export function hashPassword(password, salt) {
   return sha256(SECRET + salt + password)
 }
-const SESSION_TTL = 8 * 60 * 60 * 1000   // 8 hours (matches worker)
 
 export async function login(email, password) {
-  let res
-  try {
-    res = await fetch(`${WORKER}/api/auth/login`, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ email: email.trim().toLowerCase(), password }),
-    })
-  } catch {
-    throw new Error('Cannot reach the server. Check your connection and try again.')
+  // Try worker login first (new path)
+  if (WORKER) {
+    let res
+    try {
+      res = await fetch(`${WORKER}/api/auth/login`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ email: email.trim().toLowerCase(), password }),
+      })
+    } catch {
+      throw new Error('Cannot reach the server. Check your connection and try again.')
+    }
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.error || 'Login failed.')
+    const session = {
+      userId:    data.userId,
+      email:     data.email,
+      role:      data.role,
+      fullName:  data.fullName,
+      token:     data.token,
+      loginTime: Date.now(),
+    }
+    localStorage.setItem(SESSION_KEY, JSON.stringify(session))
+    return session
   }
 
-  const data = await res.json()
-
-  if (!res.ok) {
-    // Pass through the worker's error message (includes rate limit info)
-    throw new Error(data.error || 'Login failed.')
-  }
-
+  // Fallback: direct GitHub check (original path)
+  const { data: users } = await readJSON('users.json')
+  if (!users?.length) throw new Error('No users found. Please run the init-repo script first.')
+  const user = users.find(u => u.email.toLowerCase() === email.trim().toLowerCase())
+  if (!user) throw new Error('No account found with that email address.')
+  if (hashPassword(password, user.salt) !== user.passwordHash)
+    throw new Error('Incorrect password.')
   const session = {
-    userId:    data.userId,
-    email:     data.email,
-    role:      data.role,
-    fullName:  data.fullName,
-    token:     data.token,       // signed by worker, used for write auth
-    loginTime: Date.now(),
+    userId: user.id, email: user.email, role: user.role,
+    fullName: user.fullName, loginTime: Date.now(),
   }
   localStorage.setItem(SESSION_KEY, JSON.stringify(session))
   return session
@@ -60,18 +66,5 @@ export function getSession() {
   } catch { return null }
 }
 
-export function getToken() {
-  return getSession()?.token || null
-}
-
-export function logout() {
-  localStorage.removeItem(SESSION_KEY)
-}
-
-// ── Legacy hashPassword — kept for ChangePassword.jsx backward compat ──
-// Uses js-sha256, same as before. Existing password hashes remain valid.
-import { sha256 } from 'js-sha256'
-const AUTH_SECRET = import.meta.env.VITE_AUTH_SECRET || 'fallback-secret'
-export function hashPassword(password, salt) {
-  return sha256(AUTH_SECRET + salt + password)
-}
+export function getToken() { return getSession()?.token || null }
+export function logout()   { localStorage.removeItem(SESSION_KEY) }
