@@ -2,10 +2,9 @@
 // text | textarea | number | date | datetime | select | boolean | file | url | sdg_multi | proof_upload | profile_picture_upload
 
 const SDG = [
-  // sdg_goals stores comma-separated SDG numbers e.g. "3,7,13"
-  // sdg_details is a free-text explanation
-  { key: 'sdg_goals',   label: 'SDG Goals (select all that apply)',       type: 'sdg_multi' },
-  { key: 'sdg_details', label: 'Brief details of how it relates to SDG',  type: 'textarea',
+  // sdg_goals and sdg_details are MANDATORY wherever spread
+  { key: 'sdg_goals',   label: 'SDG Goals (select all that apply)',              type: 'sdg_multi',  required: true },
+  { key: 'sdg_details', label: 'SDG Justification (explain the relevance)',      type: 'textarea',   required: true,
     conditionalOn: { key: 'sdg_goals', value: '__nonempty__' } },
 ]
 
@@ -65,7 +64,10 @@ export const TABS = [
       { key: 'orcid',                        label: 'ORCID (16 digits)',                        type: 'text' },
       { key: 'scopus_id',                    label: 'SCOPUS ID (11 digits)',                    type: 'text' },
       { key: 'researcher_id',               label: 'Researcher ID / WoS (9 digits)',            type: 'text' },
-      { key: 'google_scholar_id',           label: 'Google Scholar ID (from your Scholar URL)',  type: 'text' },
+      { key: 'google_scholar_id',           label: 'Google Scholar Profile ID (from URL)',       type: 'text' },
+      { key: 'citations_count',             label: 'Total Citations (from Scholar/Scopus)',       type: 'number' },
+      { key: 'h_index',                     label: 'h-index',                                     type: 'number' },
+      { key: 'i10_index',                   label: 'i10-index',                                   type: 'number' },
       { key: 'area_of_specialization',      label: 'Area of Specialization',                    type: 'textarea', required: true },
       { key: 'is_phd_guide',               label: 'Recognised as PhD Research Guide?',          type: 'select', options: ['Yes', 'No'], required: true },
       { key: 'year_phd_guide_recognition',  label: 'Year of Recognition as Research Guide',     type: 'text',   conditionalOn: { key: 'is_phd_guide', value: 'Yes' } },
@@ -117,18 +119,27 @@ export const TABS = [
       { key: 'academic_year',         label: 'Academic Year',                         type: 'select', options: ACADEMIC_YEARS,   required: true },
       { key: 'semester_type',         label: 'Semester',                              type: 'select', options: ['Even', 'Odd'], required: true },
       { key: 'course_name',           label: 'Name of Course',                        type: 'text',   required: true },
-      { key: 'semester',              label: 'Semester Number',                        type: 'text',   required: true },
-      { key: 'division',              label: 'Division',                               type: 'text' },
-      { key: 'theory_or_lab',         label: 'Theory / Lab',                           type: 'select', options: ['Theory', 'Lab', 'Theory & Lab'] },
-      { key: 'batch',                 label: 'Batch',                                  type: 'text' },
       { key: 'course_code',           label: 'Course Code',                            type: 'text',   required: true },
+      { key: 'semester',              label: 'Semester Number',                        type: 'text',   required: true },
       { key: 'branch_and_semester',   label: 'Branch & Semester',                      type: 'text' },
-      { key: 'cc_name',               label: 'Course Coordinator Name',                type: 'text' },
+      { key: 'division',              label: 'Division',                               type: 'text' },
+      { key: 'batch',                 label: 'Batch',                                  type: 'text' },
+      { key: 'theory_or_lab',         label: 'Theory / Lab',                           type: 'select', options: ['Theory', 'Lab', 'Theory & Lab'] },
+      { key: 'is_course_coordinator', label: 'Are you the Course Coordinator?',        type: 'select', options: ['Yes', 'No'], required: true },
+      { key: 'cc_name',               label: 'Course Coordinator Name (if not you)',    type: 'text',   conditionalOn: { key: 'is_course_coordinator', value: 'No' } },
       { key: 'course_file_submitted', label: 'Course File Submitted?',                 type: 'select', options: ['Yes', 'No'] },
+      // ── Mid Question Paper ──────────────────────────────────
       { key: 'mid_qp_uploaded',       label: 'Mid Question Paper Uploaded?',           type: 'select', options: ['Yes', 'No'] },
-      { key: 'mid_qp_link',           label: 'Mid Question Paper Link',                type: 'url' },
+      { key: 'mid_qp_pdf',            label: 'Mid QP — Upload PDF',                    type: 'proof_upload', conditionalOn: { key: 'mid_qp_uploaded', value: 'Yes' } },
+      { key: 'mid_qp_link',           label: 'Mid QP — Alternate Link (if no PDF)',    type: 'url',    conditionalOn: { key: 'mid_qp_uploaded', value: 'Yes' } },
+      { key: 'mid_qp_review',         label: 'Mid QP — DIC Review & Action Taken',    type: 'textarea', conditionalOn: { key: 'mid_qp_uploaded', value: 'Yes' } },
+      { key: 'mid_qp_review_pdf',     label: 'Mid QP — Review PDF (upload by DIC member)', type: 'proof_upload', conditionalOn: { key: 'mid_qp_uploaded', value: 'Yes' } },
+      // ── End Question Paper ──────────────────────────────────
       { key: 'end_qp_uploaded',       label: 'End Question Paper Uploaded?',           type: 'select', options: ['Yes', 'No'] },
-      { key: 'end_qp_link',           label: 'End Question Paper Link',                type: 'url' },
+      { key: 'end_qp_pdf',            label: 'End QP — Upload PDF',                    type: 'proof_upload', conditionalOn: { key: 'end_qp_uploaded', value: 'Yes' } },
+      { key: 'end_qp_link',           label: 'End QP — Alternate Link (if no PDF)',    type: 'url',    conditionalOn: { key: 'end_qp_uploaded', value: 'Yes' } },
+      { key: 'end_qp_review',         label: 'End QP — DIC Review & Action Taken',    type: 'textarea', conditionalOn: { key: 'end_qp_uploaded', value: 'Yes' } },
+      { key: 'end_qp_review_pdf',     label: 'End QP — Review PDF (upload by DIC member)', type: 'proof_upload', conditionalOn: { key: 'end_qp_uploaded', value: 'Yes' } },
     ],
   },
 
@@ -163,6 +174,7 @@ export const TABS = [
       { key: 'subscription_type',      label: 'Subscription Type',                     type: 'select', options: ['Open Access', 'Subscription'] },
       { key: 'author_number',          label: 'Your Author Number',                    type: 'text' },
       { key: 'coauthors',              label: 'All Co-authors (separated by ";")',      type: 'textarea' },
+      { key: 'dept_coauthors',         label: 'Dept. Faculty Co-authors (select from list)', type: 'faculty_select' },
       { key: 'coauthor_affiliations',  label: 'Co-author Affiliations (by ";")',        type: 'textarea' },
       { key: 'collaboration_institutes', label: 'Collaboration Institutes / Industry', type: 'textarea' },
       { key: 'btech_coauthor',         label: 'B.Tech Student as Co-author?',          type: 'select', options: ['Yes', 'No'] },

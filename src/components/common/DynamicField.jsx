@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import RichTextarea from './RichTextarea'
 import SDGSelector from './SDGSelector'
+import FacultySelect from './FacultySelect'
 import ProofUpload from './ProofUpload'
 import ProfilePictureUpload from './ProfilePictureUpload'
 
@@ -215,8 +216,20 @@ export default function DynamicField({ field, register, watch, setValue, errors,
         <SDGSelector
           fieldKey={field.key}
           register={register}
+          required={field.required}
           value={sdgValue}
+          onChange={val => setValue(field.key, val, { shouldDirty: true, shouldValidate: true })}
+          error={err}
+        />
+      )}
+
+      {field.type === 'faculty_select' && (
+        <FacultySelect
+          fieldKey={field.key}
+          register={register}
+          value={fv || ''}
           onChange={val => setValue(field.key, val, { shouldDirty: true })}
+          currentFacultyName={tab?._facultyName}
         />
       )}
 

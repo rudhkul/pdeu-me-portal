@@ -1,4 +1,5 @@
 // ── GitHub Data Access — via Cloudflare Worker proxy ─────────
+import { getToken } from './auth'
 // The PAT never touches the browser. All requests go through
 // the worker at VITE_WORKER_URL, which adds auth server-side.
 
@@ -35,9 +36,11 @@ export async function readJSON(path) {
 
 export async function writeJSON(path, data, sha = null) {
   const content = btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2))))
+  const token   = getToken()
   const res = await ghFetch(path, {
-    method: 'PUT',
-    body:   JSON.stringify({ message: `portal: update ${path}`, content, ...(sha ? { sha } : {}) }),
+    method:  'PUT',
+    headers: token ? { 'X-Session-Token': token } : {},
+    body:    JSON.stringify({ message: `portal: update ${path}`, content, ...(sha ? { sha } : {}) }),
   })
   if (!res.ok) handleError(res.status, path)
   return res.json()

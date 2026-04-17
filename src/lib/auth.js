@@ -1,58 +1,59 @@
-import { sha256 } from 'js-sha256'
-import { readJSON } from './github'
+/**
+ * Auth — talks to the Cloudflare Worker's /api/auth/login endpoint.
+ * Worker handles PBKDF2 verification + rate limiting server-side.
+ * Browser stores the signed session token in localStorage.
+ */
 
-const SECRET      = import.meta.env.VITE_AUTH_SECRET || 'fallback-secret'
-const SESSION_KEY  = 'pdeu_session'
-const SESSION_TTL  = 8 * 60 * 60 * 1000   // 8 hours
-
-export function hashPassword(password, salt) {
-  return sha256(SECRET + salt + password)
-}
+const WORKER      = import.meta.env.VITE_WORKER_URL
+const SESSION_KEY = 'pdeu_session'
+const SESSION_TTL = 8 * 60 * 60 * 1000   // 8 hours (matches worker)
 
 export async function login(email, password) {
-  let users
+  let res
   try {
-    const res = await readJSON('users.json')
-    users = res.data
-  } catch (e) {
-    // Provide helpful error if PAT has expired
-    if (e.message?.includes('401') || e.message?.includes('Bad credentials')) {
-      throw new Error('Authentication token has expired. Please contact the administrator.')
-    }
-    throw new Error('Cannot reach data repository. Check your connection and try again.')
+    res = await fetch(`${WORKER}/api/auth/login`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ email: email.trim().toLowerCase(), password }),
+    })
+  } catch {
+    throw new Error('Cannot reach the server. Check your connection and try again.')
   }
 
-  if (!users || users.length === 0)
-    throw new Error('No users found. Please run the init-repo script first.')
+  const data = await res.json()
 
-  const user = users.find(u => u.email.toLowerCase() === email.trim().toLowerCase())
-  if (!user) throw new Error('No account found with that email address.')
-
-  const hash = hashPassword(password, user.salt)
-  if (hash !== user.passwordHash) throw new Error('Incorrect password.')
+  if (!res.ok) {
+    // Pass through the worker's error message (includes rate limit info)
+    throw new Error(data.error || 'Login failed.')
+  }
 
   const session = {
-    userId:    user.id,
-    email:     user.email,
-    role:      user.role,
-    fullName:  user.fullName,
+    userId:    data.userId,
+    email:     data.email,
+    role:      data.role,
+    fullName:  data.fullName,
+    token:     data.token,       // signed by worker, used for write auth
     loginTime: Date.now(),
   }
-  // localStorage so session survives opening new tabs
   localStorage.setItem(SESSION_KEY, JSON.stringify(session))
   return session
 }
 
 export function getSession() {
-  const s = localStorage.getItem(SESSION_KEY)
-  if (!s) return null
-  const session = JSON.parse(s)
-  // Check TTL
-  if (Date.now() - session.loginTime > SESSION_TTL) {
-    localStorage.removeItem(SESSION_KEY)
-    return null
-  }
-  return session
+  try {
+    const s = localStorage.getItem(SESSION_KEY)
+    if (!s) return null
+    const session = JSON.parse(s)
+    if (Date.now() - session.loginTime > SESSION_TTL) {
+      localStorage.removeItem(SESSION_KEY)
+      return null
+    }
+    return session
+  } catch { return null }
+}
+
+export function getToken() {
+  return getSession()?.token || null
 }
 
 export function logout() {

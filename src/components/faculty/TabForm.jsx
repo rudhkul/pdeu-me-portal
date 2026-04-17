@@ -149,7 +149,11 @@ export default function TabForm() {
       }
     }
     setRecords(current)
-    toast.success(`✅ Imported ${saved} of ${rows.length} rows! Please attach proof PDFs to each entry via Edit.`)
+    toast.success(
+      `✅ Imported ${saved} of ${rows.length} rows!` +
+      (proofRequired ? ' Open each entry and upload a PDF proof via Edit.' : ''),
+      { duration: 6000 }
+    )
     notifyAdmin({ tabId: tab.id, tabName: tab.name, facultyName: session.fullName, action: `bulk-imported ${saved} records` })
   }
 
@@ -294,6 +298,18 @@ export default function TabForm() {
         <button onClick={() => { setEditing(null); reset(); setShowForm(true) }} className="btn-primary mb-6">
           ➕ Add Single Entry
         </button>
+      )}
+
+      {/* Tab5: Show notice about publications where you're tagged as co-author */}
+      {tab.id === 'tab5' && (
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-xl p-4 mb-4 text-sm text-blue-700 dark:text-blue-300">
+          <p className="font-semibold mb-1">ℹ️ Avoiding duplicate entries</p>
+          <p className="text-xs">
+            If a colleague has already added a shared publication and tagged you as a dept. co-author,
+            you <strong>do not need to re-enter it</strong> — it will appear in the admin export automatically.
+            Only add publications here that are not already entered by a co-author in this dept.
+          </p>
+        </div>
       )}
 
       {/* Records table */}
