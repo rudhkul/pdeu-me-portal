@@ -65,6 +65,7 @@ export const TABS = [
       { key: 'orcid',                        label: 'ORCID (16 digits)',                        type: 'text' },
       { key: 'scopus_id',                    label: 'SCOPUS ID (11 digits)',                    type: 'text' },
       { key: 'researcher_id',               label: 'Researcher ID / WoS (9 digits)',            type: 'text' },
+      { key: 'google_scholar_id',           label: 'Google Scholar ID (from your Scholar URL)',  type: 'text' },
       { key: 'area_of_specialization',      label: 'Area of Specialization',                    type: 'textarea', required: true },
       { key: 'is_phd_guide',               label: 'Recognised as PhD Research Guide?',          type: 'select', options: ['Yes', 'No'], required: true },
       { key: 'year_phd_guide_recognition',  label: 'Year of Recognition as Research Guide',     type: 'text',   conditionalOn: { key: 'is_phd_guide', value: 'Yes' } },
