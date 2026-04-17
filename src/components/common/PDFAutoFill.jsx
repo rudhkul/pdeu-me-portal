@@ -1,14 +1,11 @@
 import { useState } from 'react'
 
 /**
- * PDFAutoFill — reads the first page of a PDF, runs OCR via Tesseract.js (CDN),
- * then attempts to extract: title, authors, journal, DOI, abstract, affiliation.
- *
- * Purely client-side — no server needed.
- * Used in Tab 5 (Publications) to pre-fill form fields from a PDF upload.
+ * PDFAutoFill — extracts text from PDF using pdf.js text layer (no OCR).
+ * Digital PDFs (from journals, IEEE, Elsevier etc.) have embedded text — 
+ * extraction is instant and accurate. Only scanned PDFs need OCR.
  */
 
-// Load pdfjs and Tesseract from CDN dynamically (no npm install needed)
 async function loadPdfJs() {
   if (window.pdfjsLib) return window.pdfjsLib
   return new Promise((resolve, reject) => {
@@ -24,229 +21,269 @@ async function loadPdfJs() {
   })
 }
 
-async function loadTesseract() {
-  if (window.Tesseract) return window.Tesseract
-  return new Promise((resolve, reject) => {
-    const s = document.createElement('script')
-    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js'
-    s.onload  = () => resolve(window.Tesseract)
-    s.onerror = reject
-    document.head.appendChild(s)
-  })
-}
-
-// Render first page of PDF to a canvas, return ImageData
-async function pdfFirstPageImage(file) {
+// Extract text from first 2 pages using pdf.js text layer
+async function extractPdfText(file) {
   const pdfjsLib = await loadPdfJs()
-  const arrayBuf = await file.arrayBuffer()
-  const pdf      = await pdfjsLib.getDocument({ data: arrayBuf }).promise
-  const page     = await pdf.getPage(1)
-  const viewport = page.getViewport({ scale: 2.0 })  // higher scale = better OCR
-  const canvas   = document.createElement('canvas')
-  canvas.width   = viewport.width
-  canvas.height  = viewport.height
-  await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise
-  return canvas
+  const buf  = await file.arrayBuffer()
+  const pdf  = await pdfjsLib.getDocument({ data: buf }).promise
+  const pages = Math.min(pdf.numPages, 2)
+  let fullText = ''
+  for (let i = 1; i <= pages; i++) {
+    const page    = await pdf.getPage(i)
+    const content = await page.getTextContent()
+    // Join items — preserve line breaks by checking y-position gaps
+    let lastY = null
+    let pageText = ''
+    for (const item of content.items) {
+      if (!item.str) continue
+      const y = item.transform?.[5]
+      if (lastY !== null && Math.abs(y - lastY) > 5) pageText += '\n'
+      pageText += item.str
+      lastY = y
+    }
+    fullText += pageText + '\n\n'
+  }
+  return fullText.trim()
 }
 
-// Extract text from canvas via Tesseract OCR
-async function ocrCanvas(canvas, onProgress) {
-  const Tesseract = await loadTesseract()
-  const result    = await Tesseract.recognize(canvas, 'eng', {
-    logger: m => {
-      if (m.status === 'recognizing text') onProgress(Math.round(m.progress * 100))
-    },
-  })
-  return result.data.text
-}
-
-// Parse known fields from raw OCR text
 function parseFields(text) {
-  const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
-  const lower = text.toLowerCase()
+  const lines  = text.split('\n').map(l => l.trim()).filter(Boolean)
+  const lower  = text.toLowerCase()
 
-  // DOI — very reliable regex
-  const doiMatch = text.match(/\b(10\.\d{4,}\/[^\s"<>]+)/i)
+  // ── DOI — most reliable ─────────────────────────────────────
+  const doiMatch = text.match(/\b(10\.\d{4,9}\/[^\s"<>\]]+)/i)
   const doi = doiMatch ? doiMatch[1].replace(/[.,;)\]]+$/, '') : ''
 
-  // Abstract — look for "Abstract" keyword
-  const absIdx = lower.indexOf('abstract')
-  let abstract = ''
-  if (absIdx !== -1) {
-    const afterAbs = text.slice(absIdx + 8, absIdx + 800).trim()
-    abstract = afterAbs.replace(/^[\s:—-]+/, '').split('\n').slice(0, 5).join(' ').trim()
+  // ── Title ───────────────────────────────────────────────────
+  // Usually the longest line in the first 20 lines that isn't metadata
+  let title = ''
+  const skipPatterns = /^(abstract|introduction|keywords?|received|accepted|doi|volume|issue|page|©|www\.|http|email|university|department|institute|college)/i
+  const candidates = lines.slice(0, 25).filter(l =>
+    l.length > 15 && l.length < 300 && !skipPatterns.test(l) && !/^\d/.test(l)
+  )
+  // Prefer lines with title-case or all-caps, length 20–200
+  title = candidates.find(l => l.length > 20 && l.length < 200) || ''
+
+  // ── Authors ─────────────────────────────────────────────────
+  // Look for lines with multiple names separated by commas, and/or superscript numbers
+  let authors = ''
+  const authorPatterns = [
+    // "Firstname Lastname1, Firstname Lastname2" pattern
+    /^([A-Z][a-z]+\s+[A-Z][a-z.]+(?:\s*,\s*[A-Z][a-z]+\s+[A-Z][a-z.]+){1,})/,
+    // With superscripts: "Smith A¹, Jones B², ..."
+    /^([A-Z][a-z]+\s+[A-Z][.,\d*†‡§¹²³]+(?:\s*,\s*[A-Z][a-z]+\s+[A-Z][.,\d*†‡§¹²³]+)+)/,
+  ]
+  for (const line of lines.slice(0, 30)) {
+    for (const pat of authorPatterns) {
+      if (pat.test(line) && line.length < 300) { authors = line; break }
+    }
+    if (authors) break
   }
 
-  // Keywords
-  const kwIdx = lower.indexOf('keyword')
+  // ── Journal / Conference name ────────────────────────────────
+  let journal = ''
+  const journalKw = /journal|proceedings|conference|symposium|workshop|transaction|letters|review|bulletin|annals|advances/i
+  for (const line of lines.slice(0, 40)) {
+    if (journalKw.test(line) && line.length > 5 && line.length < 150) {
+      journal = line; break
+    }
+  }
+  // Also check for publisher imprints
+  if (!journal) {
+    const publisherMatch = text.match(/(IEEE|Elsevier|Springer|Wiley|MDPI|Taylor|Nature|Sage|ACM)[^\n]{0,80}/i)
+    if (publisherMatch) journal = publisherMatch[0].trim()
+  }
+
+  // ── Abstract ────────────────────────────────────────────────
+  let abstract = ''
+  const absIdx = lower.indexOf('abstract')
+  if (absIdx !== -1) {
+    // Take text after "abstract" up to "introduction" or "keywords" or 600 chars
+    let afterAbs = text.slice(absIdx + 8)
+    const endMarkers = ['introduction', 'keywords', '1.', 'i.', 'background']
+    let endIdx = afterAbs.length
+    for (const m of endMarkers) {
+      const idx = afterAbs.toLowerCase().indexOf(m)
+      if (idx > 50 && idx < endIdx) endIdx = idx
+    }
+    abstract = afterAbs.slice(0, Math.min(endIdx, 600)).replace(/^\s*[—:\-]\s*/, '').trim()
+  }
+
+  // ── Keywords ────────────────────────────────────────────────
   let keywords = ''
+  const kwIdx = lower.indexOf('keyword')
   if (kwIdx !== -1) {
-    const afterKw = text.slice(kwIdx, kwIdx + 200)
-    const kwMatch = afterKw.match(/[Kk]eywords?[:—\s]+([^\n]+)/)
+    const afterKw = text.slice(kwIdx, kwIdx + 300)
+    const kwMatch = afterKw.match(/[Kk]ey\s*[Ww]ords?\s*[:\-—]?\s*([^\n]{5,200})/)
     if (kwMatch) keywords = kwMatch[1].trim()
   }
 
-  // Journal / Conference name — look for common patterns
-  let journal = ''
-  const journalPatterns = [
-    /(?:journal of|proceedings of|conference on|international journal)[^\n]{3,60}/i,
-    /(?:IEEE|ACM|Elsevier|Springer|Taylor|Wiley|MDPI|Nature|Sage)[^\n]{3,60}/i,
-  ]
-  for (const p of journalPatterns) {
-    const m = text.match(p)
-    if (m) { journal = m[0].trim(); break }
-  }
-
-  // Title — usually the largest/first meaningful line in the first ~10 lines
-  // Heuristic: first line with 5+ words that isn't an affiliation or email
-  let title = ''
-  for (const line of lines.slice(0, 15)) {
-    if (line.length < 10) continue
-    if (/[@\d{4}]/.test(line) && line.length < 30) continue  // skip year/email lines
-    if (/university|institute|department|college/i.test(line)) continue
-    if (line.split(' ').length >= 4 && line.length > 20) { title = line; break }
-  }
-
-  // Authors — line with multiple comma/semicolon separated names, often has superscripts
-  let authors = ''
-  for (const line of lines.slice(0, 20)) {
-    if (/,\s*[A-Z]/.test(line) && line.split(',').length >= 2 && line.length < 200) {
-      // Looks like "Smith, J., Jones, A.B., ..."
-      if (!/abstract|journal|volume|doi/i.test(line)) { authors = line; break }
-    }
-  }
-
-  // Affiliation — look for university/institute line
+  // ── Affiliation ─────────────────────────────────────────────
   let affiliation = ''
-  for (const line of lines.slice(0, 30)) {
-    if (/university|institute|department|college|pvt|ltd/i.test(line) && line.length > 15) {
+  const affKw = /university|institute|department|college|school of|faculty of|pvt\.|ltd\.|inc\./i
+  for (const line of lines.slice(0, 40)) {
+    if (affKw.test(line) && line.length > 10 && line.length < 200) {
       affiliation = line; break
     }
   }
 
-  return { doi, title, authors, abstract, keywords, journal, affiliation }
+  // ── Publication year ─────────────────────────────────────────
+  const yearMatch = text.match(/\b(20\d{2})\b/)
+  const year = yearMatch ? yearMatch[1] : ''
+
+  // ── Volume / Issue / Pages ───────────────────────────────────
+  const volMatch  = text.match(/[Vv]ol(?:ume)?\.?\s*(\d+)/);  const volume = volMatch  ? volMatch[1]  : ''
+  const issMatch  = text.match(/[Nn]o\.?\s*(\d+)/);           const issue  = issMatch  ? issMatch[1]  : ''
+  const pageMatch = text.match(/[Pp]p?\.?\s*(\d+\s*[-–]\s*\d+)/); const pages = pageMatch ? pageMatch[1] : ''
+
+  return { doi, title, authors, journal, abstract, keywords, affiliation, year, volume, issue, pages }
+}
+
+const FIELD_MAP = {
+  doi:         { key: 'doi',                   label: 'DOI' },
+  title:       { key: 'title',                 label: 'Title' },
+  authors:     { key: 'coauthors',             label: 'Co-authors' },
+  journal:     { key: 'journal_or_conf_name',  label: 'Journal / Conference' },
+  affiliation: { key: 'coauthor_affiliations', label: 'Affiliations' },
+  abstract:    { key: null,                    label: 'Abstract (preview only)' },
+  keywords:    { key: null,                    label: 'Keywords (preview only)' },
+  year:        { key: null,                    label: 'Year' },
+  volume:      { key: 'volume_no',             label: 'Volume' },
+  issue:       { key: 'issue_no',              label: 'Issue' },
+  pages:       { key: 'page_nos',              label: 'Pages' },
 }
 
 export default function PDFAutoFill({ onFill, disabled }) {
-  const [status,   setStatus]   = useState('idle')  // idle|loading|ocr|done|error
-  const [progress, setProgress] = useState(0)
-  const [preview,  setPreview]  = useState(null)
+  const [status,   setStatus]   = useState('idle')
+  const [fields,   setFields]   = useState(null)
   const [error,    setError]    = useState('')
+  const [selected, setSelected] = useState({})
 
   async function handleFile(e) {
     const file = e.target.files?.[0]
     if (!file) return
     e.target.value = ''
-
-    if (!file.type.includes('pdf') && !file.name.toLowerCase().endsWith('.pdf')) {
-      setError('Please select a PDF file.')
-      return
+    if (!file.name.toLowerCase().endsWith('.pdf') && !file.type.includes('pdf')) {
+      setError('Please select a PDF file.'); return
     }
 
-    setStatus('loading')
-    setError('')
-    setPreview(null)
+    setStatus('loading'); setError(''); setFields(null)
 
     try {
-      setStatus('loading')
-      const canvas = await pdfFirstPageImage(file)
-
-      setStatus('ocr')
-      const text   = await ocrCanvas(canvas, setProgress)
-      const fields = parseFields(text)
-      setPreview(fields)
+      const text   = await extractPdfText(file)
+      if (!text || text.length < 50) {
+        setError('This PDF has no extractable text (possibly a scan). Try entering details manually.')
+        setStatus('error'); return
+      }
+      const parsed = parseFields(text)
+      setFields(parsed)
+      // Pre-select all fields that have a value and a form mapping
+      const preselect = {}
+      for (const [k, v] of Object.entries(parsed)) {
+        if (v && FIELD_MAP[k]?.key) preselect[k] = true
+      }
+      setSelected(preselect)
       setStatus('done')
     } catch (e) {
-      setError('OCR failed: ' + (e.message || 'Unknown error'))
+      setError('Failed to read PDF: ' + (e.message || 'Unknown error'))
       setStatus('error')
     }
   }
 
-  function applyFields() {
-    if (!preview) return
-    onFill(preview)
-    setStatus('idle')
-    setPreview(null)
+  function apply() {
+    const out = {}
+    for (const [k, checked] of Object.entries(selected)) {
+      if (!checked) continue
+      const map = FIELD_MAP[k]
+      if (map?.key && fields[k]) out[map.key] = fields[k]
+    }
+    onFill(out)
+    setStatus('idle'); setFields(null); setSelected({})
   }
 
   return (
-    <div className="mb-5 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-700 rounded-xl p-4">
-      <div className="flex items-center gap-2 mb-2">
-        <span className="text-lg">🔍</span>
+    <div className="mb-4 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-700 rounded-xl p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <span>🔍</span>
         <p className="text-sm font-semibold text-indigo-700 dark:text-indigo-300">
-          Auto-fill from PDF
+          Auto-fill from Publication PDF
         </p>
-        <span className="text-xs text-indigo-500 dark:text-indigo-400 ml-auto">
-          Upload the publication PDF to extract details automatically
+        <span className="text-xs text-indigo-400 dark:text-indigo-500 ml-auto">
+          Extracts text directly — no OCR needed
         </span>
       </div>
 
-      {status === 'idle' || status === 'error' ? (
+      {(status === 'idle' || status === 'error') && (
         <>
-          <label className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium cursor-pointer transition-colors
-            ${disabled
-              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-              : 'bg-indigo-600 hover:bg-indigo-700 text-white'
-            }`}>
-            📄 Choose PDF to scan
-            <input type="file" accept=".pdf,application/pdf" onChange={handleFile}
-              className="hidden" disabled={disabled} />
+          <label className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium cursor-pointer
+            ${disabled ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700 text-white'}`}>
+            📄 Choose PDF
+            <input type="file" accept=".pdf,application/pdf"
+              onChange={handleFile} className="hidden" disabled={disabled} />
           </label>
           {error && <p className="text-xs text-red-500 dark:text-red-400 mt-2">{error}</p>}
+          <p className="text-xs text-indigo-400 dark:text-indigo-500 mt-2">
+            Works best with digital PDFs from IEEE, Elsevier, Springer, etc.
+          </p>
         </>
-      ) : status === 'loading' ? (
+      )}
+
+      {status === 'loading' && (
         <div className="flex items-center gap-2 text-sm text-indigo-600 dark:text-indigo-400">
           <div className="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"/>
-          Rendering PDF first page…
+          Reading PDF…
         </div>
-      ) : status === 'ocr' ? (
-        <div>
-          <div className="flex items-center gap-2 text-sm text-indigo-600 dark:text-indigo-400 mb-2">
-            <div className="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"/>
-            Running OCR… {progress}%
-          </div>
-          <div className="h-1.5 bg-indigo-100 dark:bg-indigo-900 rounded-full overflow-hidden">
-            <div className="h-full bg-indigo-500 rounded-full transition-all"
-              style={{ width: `${progress}%` }} />
-          </div>
-        </div>
-      ) : status === 'done' && preview && (
+      )}
+
+      {status === 'done' && fields && (
         <div>
           <p className="text-xs font-semibold text-indigo-700 dark:text-indigo-300 mb-2">
-            ✅ Extracted — review and click Apply:
+            Select fields to apply:
           </p>
-          <div className="space-y-1.5 mb-3 max-h-48 overflow-y-auto">
-            {Object.entries(preview).map(([key, val]) => {
+
+          <div className="space-y-1.5 mb-3 max-h-52 overflow-y-auto">
+            {Object.entries(FIELD_MAP).map(([key, map]) => {
+              const val = fields[key]
               if (!val) return null
-              const labels = {
-                doi: 'DOI', title: 'Title', authors: 'Authors',
-                journal: 'Journal / Conference', abstract: 'Abstract',
-                keywords: 'Keywords', affiliation: 'Affiliation',
-              }
               return (
-                <div key={key} className="flex gap-2 text-xs">
-                  <span className="text-indigo-500 dark:text-indigo-400 font-medium w-20 flex-shrink-0">
-                    {labels[key]}
-                  </span>
-                  <span className="text-gray-700 dark:text-gray-300 truncate" title={val}>
-                    {val.length > 80 ? val.slice(0, 80) + '…' : val}
-                  </span>
-                </div>
+                <label key={key}
+                  className={`flex items-start gap-2 p-2 rounded-lg cursor-pointer text-xs
+                    ${map.key ? 'hover:bg-indigo-100 dark:hover:bg-indigo-900/30' : 'opacity-60 cursor-default'}`}>
+                  {map.key ? (
+                    <input type="checkbox"
+                      checked={!!selected[key]}
+                      onChange={e => setSelected(s => ({ ...s, [key]: e.target.checked }))}
+                      className="mt-0.5 flex-shrink-0 accent-indigo-600"
+                    />
+                  ) : (
+                    <span className="w-3 flex-shrink-0" />
+                  )}
+                  <div className="min-w-0">
+                    <span className="font-medium text-indigo-600 dark:text-indigo-400">
+                      {map.label}{!map.key && ' ℹ️'}
+                    </span>
+                    <p className="text-gray-600 dark:text-gray-400 mt-0.5 break-words leading-relaxed">
+                      {val.length > 120 ? val.slice(0, 120) + '…' : val}
+                    </p>
+                  </div>
+                </label>
               )
             })}
           </div>
+
           <div className="flex gap-2">
-            <button type="button" onClick={applyFields}
-              className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs rounded-lg font-medium">
-              ✅ Apply to form
+            <button type="button" onClick={apply}
+              disabled={!Object.values(selected).some(Boolean)}
+              className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-xs rounded-lg font-medium">
+              ✅ Apply selected
             </button>
-            <button type="button" onClick={() => { setStatus('idle'); setPreview(null) }}
+            <button type="button" onClick={() => { setStatus('idle'); setFields(null) }}
               className="px-3 py-1.5 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 text-xs rounded-lg">
               Discard
             </button>
           </div>
           <p className="text-xs text-indigo-400 dark:text-indigo-500 mt-2">
-            OCR is not perfect — always review and correct extracted values.
+            Always review before saving — extraction is automatic but not perfect.
           </p>
         </div>
       )}
