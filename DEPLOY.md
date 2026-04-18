@@ -186,5 +186,10 @@ This streams live logs from the worker.
 **Worker shows 401**
 → The PAT may have expired. Create a new one and run `wrangler secret put GITHUB_PAT`
 
+**Worker health returns 502 or portal says "Worker auth error"**
+→ Your deployed worker is broken or stale, regardless of admin role
+→ Re-deploy the worker from the `worker/` folder with `wrangler deploy`
+→ Then open `/api/health` and confirm it returns JSON, not a Cloudflare error page
+
 **Worker shows 404**
 → The repo name or owner may be wrong. Check `wrangler secret put GITHUB_OWNER` and `GITHUB_REPO`

@@ -1,34 +1,67 @@
 // ── GitHub Data Access — via Cloudflare Worker proxy ─────────
 import { getToken } from './auth'
+
 // The PAT never touches the browser. All requests go through
 // the worker at VITE_WORKER_URL, which adds auth server-side.
-
-const WORKER = import.meta.env.VITE_WORKER_URL  // e.g. https://pdeu-me-portal-proxy.rudhkul.workers.dev
-const API    = `${WORKER}/api/contents`
+const WORKER = (import.meta.env.VITE_WORKER_URL || '').trim().replace(/\/+$/, '')
+const API    = WORKER ? `${WORKER}/api/contents` : ''
 
 async function ghFetch(path, options = {}) {
-  const res = await fetch(`${API}/${path}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(options.headers || {}),
-    },
-  })
-  return res
+  if (!API) {
+    throw new Error('Portal is not configured: VITE_WORKER_URL is missing.')
+  }
+
+  try {
+    const res = await fetch(`${API}/${path}`, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(options.headers || {}),
+      },
+    })
+    return res
+  } catch (err) {
+    throw new Error(`Cannot reach worker endpoint (${WORKER}). Check deployment, CORS, or network connectivity.`)
+  }
 }
 
-function handleError(status, path) {
-  if (status === 401) throw new Error('Worker auth error. Contact the administrator.')
+function handleError(status, path, detail = '') {
+  if (status === 401) {
+    throw new Error(
+      'Worker rejected the request (401). Most likely causes: expired GitHub PAT in Cloudflare, stale worker deployment, or worker/frontend auth mismatch.'
+    )
+  }
   if (status === 403) throw new Error('Access denied. Contact the administrator.')
   if (status === 409) throw new Error('Data conflict — someone else saved at the same time. Refresh and try again.')
-  if (status >= 500)  throw new Error('Server error. Please try again in a few minutes.')
-  if (status !== 404) throw new Error(`API error (${status}) for ${path}`)
+  if (status >= 500) {
+    const suffix = detail ? ` Details: ${detail}` : ''
+    throw new Error(`Worker/server error while accessing ${path}.${suffix}`)
+  }
+  if (status !== 404) {
+    const suffix = detail ? ` Details: ${detail}` : ''
+    throw new Error(`API error (${status}) for ${path}.${suffix}`)
+  }
+}
+
+async function parseErrorBody(res) {
+  try {
+    const text = await res.text()
+    if (!text) return ''
+    try {
+      const json = JSON.parse(text)
+      return json.error || json.message || text
+    } catch {
+      return text
+    }
+  } catch {
+    return ''
+  }
 }
 
 export async function readJSON(path) {
   const res = await ghFetch(path)
   if (res.status === 404) return { data: null, sha: null }
-  if (!res.ok) handleError(res.status, path)
+  if (!res.ok) handleError(res.status, path, await parseErrorBody(res))
   const meta    = await res.json()
   const decoded = decodeURIComponent(escape(atob(meta.content.replace(/\n/g, ''))))
   return { data: JSON.parse(decoded), sha: meta.sha }
@@ -37,19 +70,24 @@ export async function readJSON(path) {
 export async function writeJSON(path, data, sha = null) {
   const content = btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2))))
   const token   = getToken()
+  const headers = {}
+
+  // Kept only for backward compatibility with older workers that still inspect this header.
+  if (token) headers['X-Session-Token'] = token
+
   const res = await ghFetch(path, {
     method:  'PUT',
-    headers: token ? { 'X-Session-Token': token } : {},
+    headers,
     body:    JSON.stringify({ message: `portal: update ${path}`, content, ...(sha ? { sha } : {}) }),
   })
-  if (!res.ok) handleError(res.status, path)
+  if (!res.ok) handleError(res.status, path, await parseErrorBody(res))
   return res.json()
 }
 
 export async function listDir(path) {
   const res = await ghFetch(path)
   if (res.status === 404) return []
-  if (!res.ok) handleError(res.status, path)
+  if (!res.ok) handleError(res.status, path, await parseErrorBody(res))
   const items = await res.json()
   return Array.isArray(items) ? items : []
 }

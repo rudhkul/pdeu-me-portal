@@ -63,3 +63,23 @@ export async function notifyAdmin({ tabId, tabName, facultyName, action = 'added
     console.warn('[notify] Email failed silently:', err?.text || err)
   }
 }
+
+/**
+ * Send a reminder email directly to a faculty member.
+ * Called by admin from the Submission Status page.
+ */
+export async function sendReminderEmail({ toName, toEmail, message, filled, total, portalUrl }) {
+  if (!SERVICE_ID || !TEMPLATE_ID || !PUBLIC_KEY)
+    throw new Error('EmailJS is not configured. Add VITE_EMAILJS_* secrets in GitHub.')
+
+  init()
+  await emailjs.send(SERVICE_ID, 'template_reminder', {
+    to_name:    toName,
+    to_email:   toEmail,
+    message,
+    filled,
+    total,
+    portal_url: portalUrl,
+    timestamp:  new Date().toLocaleString('en-IN'),
+  })
+}
