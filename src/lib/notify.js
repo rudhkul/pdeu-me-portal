@@ -10,7 +10,8 @@ import { ADMIN_TAB_MAP } from '../config/tabs'
 
 const SERVICE_ID  = import.meta.env.VITE_EMAILJS_SERVICE_ID
 const TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID
-const PUBLIC_KEY  = import.meta.env.VITE_EMAILJS_PUBLIC_KEY
+const PUBLIC_KEY        = import.meta.env.VITE_EMAILJS_PUBLIC_KEY
+const REMINDER_TEMPLATE = import.meta.env.VITE_EMAILJS_REMINDER_TEMPLATE_ID
 
 // Map admin fullName → email from env vars
 // Env var names can't have spaces so we strip them: "Vivek Jaiswal" → VivekJaiswal
@@ -70,16 +71,27 @@ export async function notifyAdmin({ tabId, tabName, facultyName, action = 'added
  */
 export async function sendReminderEmail({ toName, toEmail, message, filled, total, portalUrl }) {
   if (!SERVICE_ID || !TEMPLATE_ID || !PUBLIC_KEY)
-    throw new Error('EmailJS is not configured. Add VITE_EMAILJS_* secrets in GitHub.')
+    throw new Error('Email not configured — add VITE_EMAILJS_SERVICE_ID, VITE_EMAILJS_TEMPLATE_ID and VITE_EMAILJS_PUBLIC_KEY as GitHub secrets, then redeploy.')
 
   init()
-  await emailjs.send(SERVICE_ID, 'template_reminder', {
+  let result
+  try {
+    const reminderTpl = REMINDER_TEMPLATE || TEMPLATE_ID  // fallback to main template
+    result = await emailjs.send(SERVICE_ID, reminderTpl, {
     to_name:    toName,
     to_email:   toEmail,
     message,
     filled,
     total,
-    portal_url: portalUrl,
-    timestamp:  new Date().toLocaleString('en-IN'),
-  })
+      portal_url: portalUrl,
+      timestamp:  new Date().toLocaleString('en-IN'),
+    })
+  } catch (e) {
+    // EmailJS throws { status, text } objects, not Error instances
+    const msg = (typeof e === 'string')
+      ? e
+      : (e?.text || e?.message || JSON.stringify(e) || 'EmailJS send failed')
+    throw new Error(msg)
+  }
+  return result
 }

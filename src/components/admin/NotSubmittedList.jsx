@@ -53,7 +53,7 @@ export default function NotSubmittedList() {
       })
       toast.success(`Reminder sent to ${user.fullName}`)
     } catch (e) {
-      toast.error(`Failed to send to ${user.fullName}: ${e.message}`)
+      toast.error(`Failed to send to ${user.fullName}: ${e?.message || e?.text || String(e)}`)
     }
     setSending(s => ({ ...s, [user.id]: false }))
   }
