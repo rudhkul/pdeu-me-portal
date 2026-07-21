@@ -1,13 +1,7 @@
 import { useEffect, useState } from 'react'
-import { getRawUsers, saveRawUsers } from '../../lib/github'
-import { hashPassword } from '../../lib/auth'
+import { getRawUsers } from '../../lib/github'
+import { adminResetPassword } from '../../lib/auth'
 import toast from 'react-hot-toast'
-
-function randomSalt() {
-  const arr = new Uint8Array(16)
-  window.crypto.getRandomValues(arr)
-  return Array.from(arr).map(b => b.toString(16).padStart(2,'0')).join('')
-}
 
 export default function AdminPasswordReset() {
   const [users,   setUsers]   = useState([])
@@ -29,17 +23,11 @@ export default function AdminPasswordReset() {
 
   async function resetPassword(userId) {
     const pwd = newPwds[userId]?.trim()
-    if (!pwd || pwd.length < 6) { toast.error('Password must be at least 6 characters'); return }
+    if (!pwd || pwd.length < 8) { toast.error('Password must be at least 8 characters'); return }
     const user = users.find(u => u.id === userId)
     setSaving(userId)
     try {
-      const updated = users.map(u =>
-        u.id === userId ? { ...u, passwordHash: hashPassword(pwd, u.salt) } : u
-      )
-      await saveRawUsers(updated, sha)
-      // Re-read to get new sha
-      const { users: fresh, sha: newSha } = await getRawUsers()
-      setUsers(fresh); setSha(newSha)
+      await adminResetPassword(userId, pwd)
       setNewPwds(p => ({ ...p, [userId]: '' }))
       toast.success(`Password reset for ${user.fullName}`)
     } catch (e) { toast.error(e.message) }

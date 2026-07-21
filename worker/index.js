@@ -237,6 +237,74 @@ async function changePassword(request, env, session) {
   return json({ ok: true }, 200, env)
 }
 
+function randomHex(bytes) {
+  const data = new Uint8Array(bytes)
+  crypto.getRandomValues(data)
+  return Array.from(data, value => value.toString(16).padStart(2, '0')).join('')
+}
+
+async function adminCreateUser(request, env, session) {
+  if (session.role !== 'admin') return fail('Administrator access required.', 403, env)
+  let input
+  try {
+    input = await request.json()
+  } catch {
+    return fail('Invalid request body.', 400, env)
+  }
+  const fullName = String(input?.fullName || '').trim()
+  const email = String(input?.email || '').trim().toLowerCase()
+  const role = input?.role === 'admin' ? 'admin' : 'faculty'
+  const password = String(input?.password || '')
+  if (!fullName || !email || password.length < 8) {
+    return fail('Name, email, and a password of at least 8 characters are required.', 400, env)
+  }
+  const { users, sha } = await getUsers(env)
+  if (users.some(user => String(user.email).toLowerCase() === email)) {
+    return fail('Email already exists.', 409, env)
+  }
+  const id = `usr_${randomHex(8)}`
+  const salt = randomHex(16)
+  users.push({
+    id,
+    fullName,
+    email,
+    role,
+    salt,
+    passwordHash: await sha256(env.AUTH_SECRET + salt + password),
+  })
+  const response = await ghPut(env, 'users.json', JSON.stringify({
+    message: `admin: create user ${id}`,
+    content: encodeContent(users),
+    sha,
+  }))
+  if (!response.ok) return fail('User creation failed.', 502, env)
+  return json({ ok: true, id }, 201, env)
+}
+
+async function adminResetPassword(request, env, session, userId) {
+  if (session.role !== 'admin') return fail('Administrator access required.', 403, env)
+  let input
+  try {
+    input = await request.json()
+  } catch {
+    return fail('Invalid request body.', 400, env)
+  }
+  const password = String(input?.newPassword || '')
+  if (password.length < 8) return fail('Password must be at least 8 characters.', 400, env)
+  const { users, sha } = await getUsers(env)
+  const user = users.find(item => item.id === userId)
+  if (!user) return fail('User not found.', 404, env)
+  user.salt = randomHex(16)
+  user.passwordHash = await sha256(env.AUTH_SECRET + user.salt + password)
+  const response = await ghPut(env, 'users.json', JSON.stringify({
+    message: `admin: reset password for ${userId}`,
+    content: encodeContent(users),
+    sha,
+  }))
+  if (!response.ok) return fail('Password reset failed.', 502, env)
+  return json({ ok: true }, 200, env)
+}
+
 export default {
   async fetch(request, env) {
     if (!requiredEnv(env)) return new Response('Worker configuration incomplete.', { status: 503 })
@@ -249,6 +317,14 @@ export default {
     if (!session) return fail('Authentication required.', 401, env)
     if (path === '/api/auth/verify' && request.method === 'GET') return json({ valid: true, ...session }, 200, env)
     if (path === '/api/auth/change-password' && request.method === 'POST') return changePassword(request, env, session)
+
+    if (path === '/api/admin/users' && request.method === 'POST') {
+      return adminCreateUser(request, env, session)
+    }
+    const passwordMatch = path.match(/^\/api\/admin\/users\/([^/]+)\/password$/)
+    if (passwordMatch && request.method === 'POST') {
+      return adminResetPassword(request, env, session, decodeURIComponent(passwordMatch[1]))
+    }
 
     if (path.startsWith('/api/contents/')) {
       const repoPath = cleanPath('/api/contents/', path)

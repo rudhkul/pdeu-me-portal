@@ -1,13 +1,5 @@
-import { sha256 } from 'js-sha256'
-
 const WORKER = (import.meta.env.VITE_WORKER_URL || '').trim().replace(/\/+$/, '')
 const SESSION_KEY = 'pdeu_session'
-const LEGACY_SECRET = import.meta.env.VITE_AUTH_SECRET || ''
-
-export function hashPassword(password, salt) {
-  if (!LEGACY_SECRET) throw new Error('Administrator password management is not configured.')
-  return sha256(LEGACY_SECRET + salt + password)
-}
 
 async function authRequest(path, options = {}) {
   if (!WORKER) throw new Error('Portal authentication is not configured.')
@@ -70,6 +62,26 @@ export async function changePassword(currentPassword, newPassword) {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}` },
     body: JSON.stringify({ currentPassword, newPassword }),
+  })
+}
+
+export async function adminCreateUser(user) {
+  const token = getToken()
+  if (!token) throw new Error('Your session has expired. Log in again.')
+  return authRequest('/api/admin/users', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify(user),
+  })
+}
+
+export async function adminResetPassword(userId, newPassword) {
+  const token = getToken()
+  if (!token) throw new Error('Your session has expired. Log in again.')
+  return authRequest(`/api/admin/users/${encodeURIComponent(userId)}/password`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ newPassword }),
   })
 }
 
