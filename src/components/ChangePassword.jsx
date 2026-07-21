@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useAuth } from '../hooks/useAuth'
-import { readJSON, writeJSON } from '../lib/github'
-import { hashPassword } from '../lib/auth'
+import { changePassword } from '../lib/auth'
 import toast from 'react-hot-toast'
 
 export default function ChangePassword() {
@@ -14,22 +13,12 @@ export default function ChangePassword() {
 
   async function handleSubmit(e) {
     e.preventDefault()
-    if (next.length < 6) { toast.error('New password must be at least 6 characters.'); return }
+    if (next.length < 8) { toast.error('New password must be at least 8 characters.'); return }
     if (next !== confirm) { toast.error('New passwords do not match.'); return }
 
     setLoading(true)
     try {
-      const { data, sha } = await readJSON('users.json')
-      if (!data) throw new Error('Could not load users.')
-      const user = data.find(u => u.id === session.userId)
-      if (!user) throw new Error('Your account was not found.')
-      if (hashPassword(current, user.salt) !== user.passwordHash)
-        throw new Error('Current password is incorrect.')
-
-      const updated = data.map(u =>
-        u.id === session.userId ? { ...u, passwordHash: hashPassword(next, user.salt) } : u
-      )
-      await writeJSON('users.json', updated, sha)
+      await changePassword(current, next)
       setDone(true)
       setCurrent(''); setNext(''); setConfirm('')
       toast.success('Password changed successfully!')
@@ -57,7 +46,7 @@ export default function ChangePassword() {
         <form onSubmit={handleSubmit} className="space-y-4">
           {[
             { label: 'Current Password', val: current, set: setCurrent },
-            { label: 'New Password', val: next, set: setNext, hint: 'At least 6 characters' },
+            { label: 'New Password', val: next, set: setNext, hint: 'At least 8 characters' },
             { label: 'Confirm New Password', val: confirm, set: setConfirm },
           ].map(({ label, val, set, hint }) => (
             <div key={label}>

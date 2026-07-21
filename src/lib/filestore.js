@@ -5,6 +5,14 @@ const WORKER = import.meta.env.VITE_WORKER_URL
 const API    = `${WORKER}/api/contents`
 const RAW    = `${WORKER}/api/raw`
 
+function authHeaders(extra = {}) {
+  const raw = localStorage.getItem('pdeu_session')
+  let token = ''
+  try { token = JSON.parse(raw || '{}').token || '' } catch {}
+  if (!token) throw new Error('Your session has expired. Log in again.')
+  return { Authorization: `Bearer ${token}`, ...extra }
+}
+
 function safePart(s) {
   return (s || '').replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '-').slice(0, 40) || 'file'
 }
@@ -19,7 +27,7 @@ function extensionFromName(name, fallback = '') {
 
 async function getExistingSha(filePath) {
   try {
-    const res = await fetch(`${API}/${filePath}`)
+    const res = await fetch(`${API}/${filePath}`, { headers: authHeaders() })
     if (!res.ok) return null
     const data = await res.json()
     return data.sha || null
@@ -32,7 +40,7 @@ async function uploadBinaryFile(file, filePath, commitMessage) {
 
   const res = await fetch(`${API}/${filePath}`, {
     method:  'PUT',
-    headers: { 'Content-Type': 'application/json' },
+    headers: authHeaders({ 'Content-Type': 'application/json' }),
     body:    JSON.stringify({
       message: commitMessage,
       content: base64,
@@ -54,7 +62,7 @@ async function uploadBinaryFile(file, filePath, commitMessage) {
 }
 
 async function fetchStoredBlob(storedPath) {
-  const res = await fetch(`${RAW}/${storedPath}`)
+  const res = await fetch(`${RAW}/${storedPath}`, { headers: authHeaders() })
 
   if (res.status === 404) throw new Error(`File not found: ${storedPath}`)
   if (!res.ok)            throw new Error(`Download error ${res.status} for ${storedPath}`)
@@ -131,7 +139,7 @@ export async function downloadProof(storedPath) {
 }
 
 export async function listProofsForTab(tabId) {
-  const res = await fetch(`${API}/proofs/${tabId}`)
+  const res = await fetch(`${API}/proofs/${tabId}`, { headers: authHeaders() })
   if (!res.ok) return []
   const userFolders = await res.json()
   if (!Array.isArray(userFolders)) return []
@@ -139,7 +147,7 @@ export async function listProofsForTab(tabId) {
   const all = []
   await Promise.all(userFolders.map(async folder => {
     if (folder.type !== 'dir') return
-    const r = await fetch(`${API}/proofs/${tabId}/${folder.name}`)
+    const r = await fetch(`${API}/proofs/${tabId}/${folder.name}`, { headers: authHeaders() })
     if (!r.ok) return
     const files = await r.json()
     if (!Array.isArray(files)) return

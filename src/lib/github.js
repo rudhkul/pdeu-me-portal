@@ -11,11 +11,14 @@ async function ghFetch(path, options = {}) {
     throw new Error('Portal is not configured: VITE_WORKER_URL is missing.')
   }
 
+  const token = getToken()
+  if (!token) throw new Error('Your session has expired. Log in again.')
   try {
     const res = await fetch(`${API}/${path}`, {
       ...options,
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
         ...(options.headers || {}),
       },
     })
@@ -69,15 +72,8 @@ export async function readJSON(path) {
 
 export async function writeJSON(path, data, sha = null) {
   const content = btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2))))
-  const token   = getToken()
-  const headers = {}
-
-  // Kept only for backward compatibility with older workers that still inspect this header.
-  if (token) headers['X-Session-Token'] = token
-
   const res = await ghFetch(path, {
     method:  'PUT',
-    headers,
     body:    JSON.stringify({ message: `portal: update ${path}`, content, ...(sha ? { sha } : {}) }),
   })
   if (!res.ok) handleError(res.status, path, await parseErrorBody(res))

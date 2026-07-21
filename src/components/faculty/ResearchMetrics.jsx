@@ -35,7 +35,10 @@ export default function ResearchMetrics({ session, localPubs = [] }) {
 
   async function fetchScholar(sid) {
     try {
-      const res  = await fetch(`${WORKER}/api/scholar/${encodeURIComponent(sid)}`)
+      const session = JSON.parse(localStorage.getItem('pdeu_session') || '{}')
+      const res  = await fetch(`${WORKER}/api/scholar/${encodeURIComponent(sid)}`, {
+        headers: { Authorization: `Bearer ${session.token || ''}` },
+      })
       const data = await res.json()
 
       if (res.status === 429 || data.error === 'blocked') {
