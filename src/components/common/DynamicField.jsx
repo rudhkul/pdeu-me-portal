@@ -176,11 +176,13 @@ const FIELD_VALIDATORS = {
 
 // ── Main DynamicField ─────────────────────────────────────────
 export default function DynamicField({ field, register, watch, setValue, errors, tab }) {
-  // Conditional display — supports '__nonempty__' sentinel
+  // Conditional display — supports one value, multiple values, or '__nonempty__'
   if (field.conditionalOn) {
     const watchVal = watch(field.conditionalOn.key)
     if (field.conditionalOn.value === '__nonempty__') {
       if (!watchVal) return null
+    } else if (Array.isArray(field.conditionalOn.values)) {
+      if (!field.conditionalOn.values.includes(watchVal)) return null
     } else {
       if (watchVal !== field.conditionalOn.value) return null
     }
@@ -310,6 +312,7 @@ export default function DynamicField({ field, register, watch, setValue, errors,
       {/* Standard inputs */}
       {field.type === 'url'      && <input id={field.key} {...baseReg} type="url" placeholder="https://" className={cls} />}
       {field.type === 'date'     && <input id={field.key} {...baseReg} type="date"            className={cls} />}
+      {field.type === 'month'    && <input id={field.key} {...baseReg} type="month"           className={cls} />}
       {field.type === 'datetime' && <input id={field.key} {...baseReg} type="datetime-local"  className={cls} />}
       {field.type === 'number'   && <input id={field.key} {...baseReg} type="number" step="any" min="0" className={cls} />}
       {(!field.type || field.type === 'text') && (

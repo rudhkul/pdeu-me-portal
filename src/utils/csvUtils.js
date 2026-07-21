@@ -28,6 +28,7 @@ export function downloadTemplate(tab) {
   const hints   = fields.map(f => {
     if (f.type === 'select')   return f.options?.join(' / ') || ''
     if (f.type === 'date')     return 'YYYY-MM-DD'
+    if (f.type === 'month')    return 'YYYY-MM'
     if (f.type === 'datetime') return 'YYYY-MM-DD HH:MM'
     if (f.type === 'number')   return '0'
     if (f.type === 'url')      return 'https://'
