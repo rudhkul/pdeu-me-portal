@@ -159,7 +159,10 @@ export default function TabForm() {
   }
 
   function handleDOIFill(fields) {
-    Object.entries(fields).forEach(([key, val]) => setValue(key, val, { shouldDirty: true }))
+    reset()
+    Object.entries(fields).forEach(([key, val]) =>
+      setValue(key, val, { shouldDirty: true })
+    )
   }
 
   async function handleOpenProof(storedPath) {
