@@ -8,7 +8,6 @@ function OnboardingBanner({ filledTabs, onDismiss }) {
   if (filledTabs > 0) return null   // Already started — no need to show
   return (
     <div className="bg-pdeu-light dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 mb-6 flex flex-wrap gap-4 items-start">
-      <span className="text-2xl">👋</span>
       <div className="flex-1 min-w-0">
         <p className="font-semibold text-pdeu-blue dark:text-blue-300">Welcome to the DIC Mechanical Data Portal!</p>
         <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
@@ -16,14 +15,14 @@ function OnboardingBanner({ filledTabs, onDismiss }) {
         </p>
         <ol className="text-sm text-gray-600 dark:text-gray-400 mt-2 space-y-1 list-decimal list-inside">
           <li>Start with <strong className="text-gray-700 dark:text-gray-300">Tab 1 — Faculty Information</strong> (your profile)</li>
-          <li>Work through each tab and add all relevant entries</li>
+          <li>Complete each applicable section and submit the relevant records</li>
           <li>For file attachments, upload to OneDrive and paste the sharing link</li>
           <li>You can save, edit, and come back anytime — progress is always saved</li>
         </ol>
       </div>
       <button onClick={onDismiss}
         className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-sm flex-shrink-0">
-        ✕ Dismiss
+         Dismiss
       </button>
     </div>
   )
@@ -36,12 +35,10 @@ function AnnouncementBanner({ announcements }) {
     warning: 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-700 text-amber-800 dark:text-amber-300',
     urgent:  'bg-red-50   dark:bg-red-900/20   border-red-200   dark:border-red-700   text-red-800   dark:text-red-300',
   }
-  const typeIcons = { info: 'ℹ️', warning: '⚠️', urgent: '🚨' }
   return (
     <div className="space-y-2 mb-4">
       {announcements.map(ann => (
         <div key={ann.id} className={`border rounded-xl px-4 py-3 flex items-start gap-3 ${typeStyles[ann.type] || typeStyles.info}`}>
-          <span className="flex-shrink-0 text-base">{typeIcons[ann.type] || 'ℹ️'}</span>
           <div>
             <p className="font-semibold text-sm">{ann.title}</p>
             <p className="text-xs mt-0.5 opacity-80">{ann.body}</p>
@@ -66,7 +63,6 @@ function DeadlineBanner({ deadline, message }) {
 
   return (
     <div className={`border rounded-xl px-4 py-3 mb-6 flex flex-wrap items-center gap-3 ${cls}`}>
-      <span className="text-lg">{isPast ? '⚠️' : isUrgent ? '⏰' : '📅'}</span>
       <div className="flex-1 min-w-0">
         <p className="font-semibold text-sm">
           {isPast
@@ -127,12 +123,12 @@ export default function FacultyDashboard() {
     <div className="p-6 max-w-6xl mx-auto">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-pdeu-blue">Welcome, {session?.fullName} 👋</h1>
+        <h1 className="text-2xl font-bold text-pdeu-blue">Welcome, {session?.fullName} </h1>
         <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">
-          {loading ? 'Loading your data…' : `${filledTabs} of ${totalTabs} sections have entries`}
+          {loading ? 'Loading your data…' : `${filledTabs} of ${totalTabs} sections contain records`}
         </p>
         <Link to="/faculty/profile" className="mt-1 text-xs text-pdeu-blue dark:text-blue-400 hover:underline">
-          🖨️ Print / Save my data summary →
+           View or print faculty record summary →
         </Link>
       </div>
 
@@ -174,7 +170,7 @@ export default function FacultyDashboard() {
               <Link
                 key={tab.id}
                 to={`/faculty/tab/${tab.id}`}
-                title={`${tab.name} — ${counts[tab.id] || 0} entries`}
+                title={`${tab.name} — ${counts[tab.id] || 0} records`}
                 className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold transition-colors
                   ${(counts[tab.id] || 0) > 0
                     ? 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400'
@@ -203,7 +199,6 @@ export default function FacultyDashboard() {
                 ${filled ? 'border-l-green-400' : 'border-l-gray-200 dark:border-l-gray-600'}`}
             >
               <div className="flex items-start gap-3">
-                <span className="text-2xl">{tab.icon}</span>
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-gray-800 dark:text-gray-100 text-sm group-hover:text-pdeu-blue leading-tight">
                     {tab.number}. {tab.name}
@@ -224,7 +219,7 @@ export default function FacultyDashboard() {
                     ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
                     : 'bg-gray-100 text-gray-400 dark:bg-gray-700'
                   }`}>
-                  {loading ? '…' : filled ? `${count} ${tab.isProfile ? 'record' : 'entries'}` : 'No entries yet'}
+                  {loading ? '…' : filled ? `${count} ${tab.isProfile ? 'record' : 'entries'}` : 'No records submitted'}
                 </span>
                 <span className="text-pdeu-blue text-xs opacity-0 group-hover:opacity-100 transition-opacity font-medium">Open →</span>
               </div>

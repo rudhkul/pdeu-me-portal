@@ -22,7 +22,7 @@ export default function NotificationSettings() {
 
   async function save() {
     setSaving(true)
-    try { await saveSettings(settings); toast.success('Saved!') }
+    try { await saveSettings(settings); toast.success('Saved.') }
     catch (e) { toast.error(e.message) }
     finally { setSaving(false) }
   }
@@ -33,7 +33,7 @@ export default function NotificationSettings() {
 
   return (
     <div className="p-6 max-w-3xl mx-auto">
-      <h1 className="text-2xl font-bold text-pdeu-blue dark:text-white mb-2">📧 Email Notifications</h1>
+      <h1 className="text-2xl font-bold text-pdeu-blue dark:text-white mb-2">Email Notifications</h1>
       <p className="text-gray-500 dark:text-gray-400 text-sm mb-8">
         When a faculty saves data, the admin who owns that tab receives an email automatically.
         Uses EmailJS — free, no backend needed.
@@ -45,7 +45,7 @@ export default function NotificationSettings() {
           ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
           : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
         }`}>
-        {isConfigured ? '✅ EmailJS is configured' : '⚠️ EmailJS is not configured yet'}
+        {isConfigured ? 'Email service is configured' : 'Email service is not configured'}
       </div>
 
       {!isConfigured && (
@@ -172,12 +172,12 @@ export default function NotificationSettings() {
                 {settings.notifications_enabled !== false ? 'Notifications enabled' : 'Notifications disabled'}
               </p>
               <p className="text-xs text-gray-400 dark:text-gray-500">
-                Admins receive an email when faculty save or delete records in their tabs.
+                Administrators receive an email when faculty save or delete records in their tabs.
               </p>
             </div>
           </label>
           <button onClick={save} disabled={saving} className="btn-primary mt-6">
-            {saving ? '⏳ Saving…' : '💾 Save'}
+            {saving ? ' Saving…' : 'Save'}
           </button>
         </div>
       )}

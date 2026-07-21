@@ -204,7 +204,6 @@ export default function PDFAutoFill({ onFill, disabled }) {
   return (
     <div className="mb-4 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-700 rounded-xl p-4">
       <div className="flex items-center gap-2 mb-3">
-        <span>🔍</span>
         <p className="text-sm font-semibold text-indigo-700 dark:text-indigo-300">
           Auto-fill from Publication PDF
         </p>
@@ -217,7 +216,7 @@ export default function PDFAutoFill({ onFill, disabled }) {
         <>
           <label className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium cursor-pointer
             ${disabled ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700 text-white'}`}>
-            📄 Choose PDF
+             Choose PDF
             <input type="file" accept=".pdf,application/pdf"
               onChange={handleFile} className="hidden" disabled={disabled} />
           </label>
@@ -260,7 +259,7 @@ export default function PDFAutoFill({ onFill, disabled }) {
                   )}
                   <div className="min-w-0">
                     <span className="font-medium text-indigo-600 dark:text-indigo-400">
-                      {map.label}{!map.key && ' ℹ️'}
+                      {map.label}{!map.key && ' '}
                     </span>
                     <p className="text-gray-600 dark:text-gray-400 mt-0.5 break-words leading-relaxed">
                       {val.length > 120 ? val.slice(0, 120) + '…' : val}
@@ -275,7 +274,7 @@ export default function PDFAutoFill({ onFill, disabled }) {
             <button type="button" onClick={apply}
               disabled={!Object.values(selected).some(Boolean)}
               className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-xs rounded-lg font-medium">
-              ✅ Apply selected
+               Apply selected
             </button>
             <button type="button" onClick={() => { setStatus('idle'); setFields(null) }}
               className="px-3 py-1.5 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 text-xs rounded-lg">

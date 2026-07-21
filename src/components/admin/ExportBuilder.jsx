@@ -16,7 +16,7 @@ function SortableColumn({ id, label, onRemove }) {
         ${isDragging ? 'opacity-50 border-pdeu-blue shadow-lg' : 'border-gray-200 dark:border-gray-600'}`}>
       <span {...attributes} {...listeners} className="text-gray-300 dark:text-gray-500 cursor-grab active:cursor-grabbing">⠿</span>
       <span className="flex-1 text-gray-700 dark:text-gray-200 truncate max-w-[200px]">{label}</span>
-      <button onClick={() => onRemove(id)} className="text-gray-300 hover:text-red-400 flex-shrink-0 text-xs">✕</button>
+      <button onClick={() => onRemove(id)} className="text-gray-400 hover:text-red-500 flex-shrink-0 text-xs">Remove</button>
     </div>
   )
 }
@@ -80,7 +80,7 @@ export default function ExportBuilder() {
   async function exportAllTabs() {
     if (!confirm(`Export ALL ${TABS.length} tabs as one Excel file? May take 1–2 minutes.`)) return
     setExportingAll(true)
-    toast('Fetching all tab data…', { icon: '⏳', duration: 120000, id: 'exportall' })
+    toast('Retrieving data for all sections…', { duration: 120000, id: 'exportall' })
     try {
       const sheets = []
       for (const t of TABS) {
@@ -107,7 +107,7 @@ export default function ExportBuilder() {
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      <h1 className="text-2xl font-bold text-pdeu-blue dark:text-white mb-1">📥 Export Builder</h1>
+      <h1 className="text-2xl font-bold text-pdeu-blue dark:text-white mb-1">Export Builder</h1>
       <p className="text-gray-500 dark:text-gray-400 text-sm mb-8">
         Choose a tab, pick and reorder columns, filter, then download as Excel.
       </p>
@@ -123,7 +123,7 @@ export default function ExportBuilder() {
         <button onClick={exportAllTabs} disabled={exportingAll} className="btn-primary flex items-center gap-2 whitespace-nowrap">
           {exportingAll
             ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"/>Exporting…</>
-            : '📊 Export All Tabs'
+            : ' Export All Tabs'
           }
         </button>
       </div>
@@ -165,7 +165,7 @@ export default function ExportBuilder() {
             </div>
             <div className="space-y-1 max-h-60 overflow-y-auto">
               {available.length === 0
-                ? <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-3">All columns added ✓</p>
+                ? <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-3">All columns added </p>
                 : available.map(col => (
                     <button key={col.key} onClick={() => setChosen(p => [...p, col])} className={addBtn}>
                       + {col.label}
@@ -211,10 +211,10 @@ export default function ExportBuilder() {
 
           <div className="flex gap-3">
             <button onClick={loadPreview} className="btn-secondary" disabled={loading}>
-              {loading ? '⏳ Loading…' : '👁 Load Preview'}
+              {loading ? ' Loading…' : ' Load Preview'}
             </button>
             <button onClick={doExport} className="btn-primary" disabled={!previewReady || !rows.length}>
-              📥 Download Excel ({rows.length} rows)
+               Download Excel ({rows.length} rows)
             </button>
           </div>
 

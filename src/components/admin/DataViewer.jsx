@@ -156,7 +156,7 @@ export default function DataViewer() {
     try {
       await toggleVerified(tab.id, userId, row.id, verified)
       setRows(prev => prev.map(r => r.id === row.id ? { ...r, _verified: verified } : r))
-      toast.success(verified ? '✅ Marked as verified' : 'Marked as unverified')
+      toast.success(verified ? 'Record marked as verified.' : 'Record marked as unverified.')
     } catch (e) { toast.error(e.message) }
   }
 
@@ -171,10 +171,10 @@ export default function DataViewer() {
       <div className="flex flex-wrap items-center gap-3 mb-6">
         <Link to="/admin" className="text-gray-400 hover:text-pdeu-blue text-sm">← Dashboard</Link>
         <span className="text-gray-300 dark:text-gray-600">/</span>
-        <h1 className="text-xl font-bold text-pdeu-blue dark:text-white">{tab.icon} {tab.name}</h1>
+        <h1 className="text-xl font-bold text-pdeu-blue dark:text-white">{tab.name}</h1>
         <div className="ml-auto flex gap-2">
-          <Link to="/admin/export" className="btn-secondary text-sm">🛠 Custom Export</Link>
-          <button onClick={quickExport} className="btn-primary text-sm">📥 Quick Export</button>
+          <Link to="/admin/export" className="btn-secondary text-sm"> Custom Export</Link>
+          <button onClick={quickExport} className="btn-primary text-sm"> Quick Export</button>
         </div>
       </div>
 
@@ -182,10 +182,10 @@ export default function DataViewer() {
       {rows.length > 0 && (
         <div className="flex gap-3 mb-4 flex-wrap">
           <span className="text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-3 py-1.5 rounded-full font-medium">
-            ✅ {verifiedCount} verified
+             {verifiedCount} verified
           </span>
           <span className="text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-3 py-1.5 rounded-full font-medium">
-            ⏳ {unverifiedCount} pending review
+             {unverifiedCount} pending review
           </span>
         </div>
       )}
@@ -195,7 +195,7 @@ export default function DataViewer() {
         <div className="card mb-6 border-2 border-amber-300 dark:border-amber-500">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold text-gray-800 dark:text-gray-100">
-              ✏️ Editing: <span className="text-pdeu-blue">{editingRow.row.facultyName}</span>
+               Editing: <span className="text-pdeu-blue">{editingRow.row.facultyName}</span>
             </h2>
             <p className="text-xs text-gray-400"><span className="text-red-500">*</span> Required</p>
           </div>
@@ -208,7 +208,7 @@ export default function DataViewer() {
               ))}
             </div>
             <div className="flex gap-3 mt-6 pt-4 border-t border-gray-100 dark:border-gray-700">
-              <button id="admin-edit-submit" type="submit" className="btn-primary" disabled={saving}>{saving ? '⏳ Saving…' : '💾 Save Changes'}</button>
+              <button id="admin-edit-submit" type="submit" className="btn-primary" disabled={saving}>{saving ? ' Saving…' : 'Save Changes'}</button>
               <button type="button" className="btn-secondary" onClick={() => { setEditingRow(null); reset() }}>Cancel</button>
             </div>
           </form>
@@ -256,7 +256,6 @@ export default function DataViewer() {
         </div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-20 text-gray-400 dark:text-gray-500">
-          <p className="text-4xl mb-3">📭</p>
           <p>No records{search || yearFilter || facultyFilter ? ' matching filters' : ' yet'}.</p>
         </div>
       ) : (
@@ -303,7 +302,7 @@ export default function DataViewer() {
                             : 'Click to mark as verified'
                           }
                         >
-                          {row._verified ? '✅ Verified' : '⏳ Pending'}
+                          {row._verified ? 'Verified' : ' Pending'}
                         </button>
                       </td>
                       <td className="px-4 py-2.5">
@@ -334,7 +333,7 @@ export default function DataViewer() {
                                         type="button"
                                         onClick={() => openProofInBrowser(row[f.key]).catch(e => toast.error('Could not open PDF: ' + e.message))}
                                         className="text-green-600 dark:text-green-400 text-xs font-mono hover:underline"
-                                      >✅ {row.report_name || row[f.key].split('/').pop()} · View PDF</button>
+                                      > {row.report_name || row[f.key].split('/').pop()} · View Document</button>
                                     : (row[f.key] != null && row[f.key] !== ''
                                         ? String(row[f.key])
                                         : <span className="text-gray-300 dark:text-gray-600">—</span>)

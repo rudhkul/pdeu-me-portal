@@ -142,7 +142,7 @@ export default function ProfilePictureUpload({
           {previewUrl ? (
             <img src={previewUrl} alt="Profile preview" className="w-full h-full object-cover" />
           ) : (
-            <span className="text-2xl text-gray-400">👤</span>
+            <span className="text-xs text-gray-400">No image</span>
           )}
         </div>
 

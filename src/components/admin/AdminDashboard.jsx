@@ -42,20 +42,19 @@ export default function AdminDashboard() {
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-pdeu-blue">Admin Dashboard</h1>
+        <h1 className="text-2xl font-bold text-pdeu-blue">Administration Dashboard</h1>
         <p className="text-gray-500 dark:text-gray-400 mt-1">Logged in as <strong>{session?.fullName}</strong></p>
       </div>
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {[
-          { label: 'Registered Faculty', value: faculties.length, icon: '👥', color: 'bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400' },
-          { label: 'Total Submissions', value: totalSubmissions, icon: '📊', color: 'bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400' },
-          { label: 'Tabs with Data', value: tabsWithData, icon: '✅', color: 'bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400' },
-          { label: 'Admins', value: ADMINS.length, icon: '🛡️', color: 'bg-orange-50 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400' },
+          { label: 'Registered Faculty', value: faculties.length },
+          { label: 'Total Submissions', value: totalSubmissions },
+          { label: 'Sections with Data', value: tabsWithData },
+          { label: 'Administrators', value: ADMINS.length },
         ].map(stat => (
           <div key={stat.label} className="card flex items-center gap-4">
-            <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl flex-shrink-0 ${stat.color}`}>{stat.icon}</div>
             <div>
               <p className="text-2xl font-bold text-gray-800 dark:text-gray-100">{loading ? '…' : stat.value}</p>
               <p className="text-sm text-gray-500 dark:text-gray-400">{stat.label}</p>
@@ -84,7 +83,6 @@ export default function AdminDashboard() {
             const pct       = Math.round((submitted / total) * 100)
             return (
               <Link to={`/admin/tab/${tab.id}`} key={tab.id} className="flex items-center gap-3 group hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg px-2 py-1.5 -mx-2">
-                <span className="text-base w-6 flex-shrink-0">{tab.icon}</span>
                 <span className="text-sm text-gray-600 dark:text-gray-300 w-48 truncate group-hover:text-pdeu-blue">{tab.number}. {tab.name}</span>
                 <div className="flex-1 h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
                   <div className={`h-full rounded-full transition-all ${pct === 100 ? 'bg-green-400' : pct >= 50 ? 'bg-pdeu-blue' : 'bg-gray-300'}`}
@@ -129,7 +127,7 @@ export default function AdminDashboard() {
                           <td key={t.id} className="px-1 py-1.5 text-center">
                             {loading ? <span className="text-gray-200">·</span>
                               : done
-                              ? <span className="text-green-500" title="Submitted">✓</span>
+                              ? <span className="text-green-600 dark:text-green-400" title="Submitted">Submitted</span>
                               : <span className="text-gray-200 dark:text-gray-600" title="Not submitted">·</span>
                             }
                           </td>
@@ -165,7 +163,6 @@ export default function AdminDashboard() {
           <Link key={tab.id} to={`/admin/tab/${tab.id}`}
             className="card hover:shadow-md hover:border-pdeu-blue transition-all group">
             <div className="flex items-start gap-3">
-              <span className="text-2xl">{tab.icon}</span>
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-sm text-gray-800 dark:text-gray-100 group-hover:text-pdeu-blue leading-tight">{tab.number}. {tab.name}</p>
                 <p className="text-xs text-gray-400 mt-0.5">Owner: <span className="font-medium text-gray-600 dark:text-gray-300">{ADMIN_TAB_MAP[tab.id]}</span></p>
@@ -173,7 +170,7 @@ export default function AdminDashboard() {
             </div>
             <div className="mt-3 flex items-center justify-between">
               <span className="text-2xl font-bold text-pdeu-blue">{loading ? '…' : counts[tab.id] ?? 0}</span>
-              <span className="text-xs text-gray-400">faculties submitted</span>
+              <span className="text-xs text-gray-400">faculty submissions</span>
             </div>
           </Link>
         ))}

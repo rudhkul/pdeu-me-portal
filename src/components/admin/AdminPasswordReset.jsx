@@ -61,7 +61,7 @@ export default function AdminPasswordReset() {
             disabled={saving === u.id || !newPwds[u.id]?.trim()}
             className="btn-primary text-xs px-3 whitespace-nowrap disabled:opacity-50"
           >
-            {saving === u.id ? '⏳' : 'Reset'}
+            {saving === u.id ? '' : 'Reset'}
           </button>
         </div>
       </div>
@@ -70,7 +70,7 @@ export default function AdminPasswordReset() {
 
   return (
     <div className="p-6 max-w-3xl mx-auto">
-      <h1 className="text-2xl font-bold text-pdeu-blue dark:text-white mb-2">🔑 Password Reset</h1>
+      <h1 className="text-2xl font-bold text-pdeu-blue dark:text-white mb-2">Password Reset</h1>
       <p className="text-gray-500 dark:text-gray-400 text-sm mb-8">
         Reset any user's password directly from the portal. Type a new password and press Enter or click Reset.
       </p>
@@ -84,13 +84,13 @@ export default function AdminPasswordReset() {
         <div className="space-y-8">
           <div>
             <h2 className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-3 flex items-center gap-2">
-              🛡️ Admins <span className="text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 px-2 py-0.5 rounded-full">{admins.length}</span>
+               Administrators <span className="text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 px-2 py-0.5 rounded-full">{admins.length}</span>
             </h2>
             <div className="space-y-2">{admins.map(u => <UserRow key={u.id} u={u} />)}</div>
           </div>
           <div>
             <h2 className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-3 flex items-center gap-2">
-              👤 Faculty <span className="text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2 py-0.5 rounded-full">{faculty.length}</span>
+               Faculty <span className="text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2 py-0.5 rounded-full">{faculty.length}</span>
             </h2>
             <div className="space-y-2">{faculty.map(u => <UserRow key={u.id} u={u} />)}</div>
           </div>

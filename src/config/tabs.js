@@ -20,7 +20,7 @@ export const PROOF_REQUIRED_TABS = [
 const PROOF = [
   {
     key:      'drive_link',
-    label:    'Upload PDF Proof',
+    label:    'Upload Supporting Document (PDF)',
     type:     'proof_upload',
     required: false,   // enforced dynamically in TabForm based on PROOF_REQUIRED_TABS
   },
@@ -53,7 +53,7 @@ export const ACADEMIC_YEARS = ['2026-27','2025-26','2024-25','2023-24','2022-23'
 export const TABS = [
   {
     id: 'tab1', number: 1, name: 'Faculty Information',
-    table: 'tab1_faculty_info', icon: '👤', isProfile: true,
+    table: 'tab1_faculty_info', isProfile: true,
     description: 'Personal academic and professional profile. One record per faculty.',
     fields: [
       { key: 'profile_picture',              label: 'Profile Picture',                         type: 'profile_picture_upload' },
@@ -96,7 +96,7 @@ export const TABS = [
 
   {
     id: 'tab2', number: 2, name: 'Faculty & Student Achievements',
-    table: 'tab2_achievements', icon: '🏆',
+    table: 'tab2_achievements',
     description: 'Awards and achievements — by faculty or students guided by faculty.',
     fields: [
       { key: 'details',            label: 'Details about Achievement',                            type: 'textarea', required: true },
@@ -113,7 +113,7 @@ export const TABS = [
 
   {
     id: 'tab3', number: 3, name: 'Faculty Subject Mapping',
-    table: 'tab3_subject_mapping', icon: '📚',
+    table: 'tab3_subject_mapping',
     description: 'Courses taught — Even and Odd semesters.',
     fields: [
       { key: 'academic_year',         label: 'Academic Year',                                           type: 'select', options: ACADEMIC_YEARS,                                        required: true },
@@ -143,7 +143,7 @@ export const TABS = [
 
   {
     id: 'tab4', number: 4, name: 'PhD Student Details',
-    table: 'tab4_phd_students', icon: '🎓',
+    table: 'tab4_phd_students',
     description: 'Details of PhD students supervised.',
     fields: [
       { key: 'supervisor_1',    label: 'Name of Supervisor I',                         type: 'text', required: true },
@@ -162,7 +162,7 @@ export const TABS = [
 
   {
     id: 'tab5', number: 5, name: 'Publications & Conferences',
-    table: 'tab5_publications', icon: '📄',
+    table: 'tab5_publications',
     description: 'Journal papers, conference presentations, and book chapters.',
     fields: [
       { key: 'pub_type',               label: 'Type',                                  type: 'select', options: ['Journal Paper', 'Conference Paper', 'Book Chapter', 'Book', 'Other'], required: true },
@@ -198,7 +198,7 @@ export const TABS = [
 
   {
     id: 'tab6', number: 6, name: 'Projects & Consultancy',
-    table: 'tab6_projects', icon: '🔬',
+    table: 'tab6_projects',
     description: 'Research projects, consultancy, and other funded activities.',
     fields: [
       { key: 'title',               label: 'Title of Project / Consultancy',           type: 'textarea', required: true },
@@ -231,7 +231,7 @@ export const TABS = [
 
   {
     id: 'tab7', number: 7, name: 'Patents & Prototypes',
-    table: 'tab7_patents', icon: '💡',
+    table: 'tab7_patents',
     description: 'Patents filed / granted and working prototypes developed.',
     fields: [
       { key: 'inventor_name',         label: 'Name of Inventor',                      type: 'text',   required: true },
@@ -252,7 +252,7 @@ export const TABS = [
 
   {
     id: 'tab8', number: 8, name: 'Meetings, Alumni & Parent Interactions',
-    table: 'tab8_meetings', icon: '🤝',
+    table: 'tab8_meetings',
     description: 'Department meetings, alumni interactions, parent–teacher meets.',
     fields: [
       { key: 'meeting_details', label: 'Details of Meeting / Interaction',             type: 'textarea', required: true },
@@ -269,7 +269,7 @@ export const TABS = [
 
   {
     id: 'tab9', number: 9, name: 'Talks, Workshops, STTP & FDP',
-    table: 'tab9_talks_workshops', icon: '🎤',
+    table: 'tab9_talks_workshops',
     emphasis: 'ORGANISED BY YOU:',
     description: 'Enter only expert talks, workshops, STTPs, FDPs and similar events that you organised or coordinated.',
     fields: [
@@ -299,7 +299,7 @@ export const TABS = [
 
   {
     id: 'tab10', number: 10, name: 'Professional Memberships',
-    table: 'tab10_memberships', icon: '🏅',
+    table: 'tab10_memberships',
     description: 'Memberships in national / international professional societies.',
     fields: [
       { key: 'grade_level',      label: 'Grade / Level / Position',                   type: 'text',   required: true },
@@ -312,7 +312,7 @@ export const TABS = [
 
   {
     id: 'tab11', number: 11, name: 'Faculty Certifications / MOOCs',
-    table: 'tab11_certifications', icon: '🎖️',
+    table: 'tab11_certifications',
     description: 'SWAYAM, NPTEL and other approved MOOC certifications obtained.',
     fields: [
       { key: 'course_name',    label: 'Name of Course Passed',                         type: 'text',   required: true },
@@ -325,7 +325,7 @@ export const TABS = [
 
   {
     id: 'tab12', number: 12, name: 'e-Content Developed',
-    table: 'tab12_econtent', icon: '🎬',
+    table: 'tab12_econtent',
     description: 'Courses developed for SWAYAM / NPTEL / e-PG Pathshala and other platforms.',
     fields: [
       { key: 'course_name',   label: 'Name of Course Developed',                       type: 'text',   required: true },
@@ -339,7 +339,7 @@ export const TABS = [
 
   {
     id: 'tab13', number: 13, name: 'Faculty Support in Student Projects',
-    table: 'tab13_student_projects', icon: '🚀',
+    table: 'tab13_student_projects',
     description: 'Mentoring / facilitating student innovation – hackathons, ideathons, etc.',
     fields: [
       { key: 'event_name',          label: 'Name of Event',                            type: 'text',   required: true },
@@ -357,7 +357,7 @@ export const TABS = [
 
   {
     id: 'tab14', number: 14, name: 'Faculty Training & Collaboration',
-    table: 'tab14_training', icon: '🏭',
+    table: 'tab14_training',
     emphasis: 'ATTENDED / PARTICIPATED:',
     description: 'Enter FDPs, training programmes, internships or collaborations that you attended or participated in.',
     fields: [
@@ -377,7 +377,7 @@ export const TABS = [
 
   {
     id: 'tab15', number: 15, name: 'Faculty as Resource Persons',
-    table: 'tab15_resource_persons', icon: '🎙️',
+    table: 'tab15_resource_persons',
     emphasis: 'DELIVERED BY YOU:',
     description: 'Enter sessions that you delivered as an invited resource person for an STTP, FDP, expert talk or similar event.',
     fields: [
@@ -393,7 +393,7 @@ export const TABS = [
 
   {
     id: 'tab16', number: 16, name: 'Industrial Visits',
-    table: 'tab16_industrial_visits', icon: '🏗️',
+    table: 'tab16_industrial_visits',
     description: 'Industrial visits organized for students.',
     fields: [
       { key: 'faculty_coordinator',    label: 'Faculty Coordinator of Visit',          type: 'text',   required: true },
@@ -408,7 +408,7 @@ export const TABS = [
       { key: 'students_participated',  label: 'No. of Students Participated',           type: 'number', required: true },
       { key: 'purpose',                label: 'Purpose of Visit',                        type: 'select', options: ['Academic Learning', 'Internship Scouting', 'Project Work', 'Industry Exposure', 'Other'] },
       { key: 'industry_feedback',      label: 'Feedback from Industry (if any)',         type: 'textarea' },
-      { key: 'proof_available',        label: 'Proof of Visit Available?',               type: 'select', options: ['Yes', 'No'] },
+      { key: 'proof_available',        label: 'Supporting Document Available?',               type: 'select', options: ['Yes', 'No'] },
       { key: 'drive_link',             label: 'OneDrive / Drive Link',                   type: 'file' },
       { key: 'report_name',            label: 'Name of Report',                          type: 'text' },
     ],
@@ -416,7 +416,7 @@ export const TABS = [
 
   {
     id: 'tab17', number: 17, name: 'Academic Courses in Innovation',
-    table: 'tab17_innovation_courses', icon: '💼',
+    table: 'tab17_innovation_courses',
     description: 'Courses related to Innovation, Entrepreneurship, and IPR.',
     fields: [
       { key: 'academic_year',  label: 'Academic Year',                                  type: 'select', options: ACADEMIC_YEARS,   required: true },
@@ -431,7 +431,7 @@ export const TABS = [
 
   {
     id: 'tab18', number: 18, name: 'Student Progression',
-    table: 'tab18_placement', icon: '🎓',
+    table: 'tab18_placement',
     description: 'Placement, higher studies, startup/business and other student outcomes.',
     fields: [
       { key: 'roll_no',        label: 'PDEU Roll No.',                                  type: 'text',   required: true },
@@ -462,7 +462,7 @@ export const TABS = [
 
   {
     id: 'tab19', number: 19, name: 'MOU Details',
-    table: 'tab19_mou', icon: '📝',
+    table: 'tab19_mou',
     description: 'Memoranda of Understanding with institutions and industries.',
     fields: [
       { key: 'organisation_name',    label: 'Organisation with which MoU is Signed',   type: 'text',   required: true },
@@ -481,7 +481,7 @@ export const TABS = [
 
   {
     id: 'tab20', number: 20, name: 'Internal Research Grants',
-    table: 'tab20_research_grants', icon: '💰',
+    table: 'tab20_research_grants',
     description: 'Institution seed money / internal research grants received.',
     fields: [
       { key: 'project_title',        label: 'Project Title / Support for Activity',    type: 'text',     required: true },
@@ -496,7 +496,7 @@ export const TABS = [
 
   {
     id: 'tab21', number: 21, name: 'Competitive Examinations',
-    table: 'tab21_competitive_examinations', icon: '🏅',
+    table: 'tab21_competitive_examinations',
     description: 'Competitive examinations appeared in or qualified by students.',
     fields: [
       { key: 'student_name',             label: 'Student Name',                         type: 'text',   required: true },

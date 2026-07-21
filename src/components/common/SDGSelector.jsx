@@ -43,7 +43,7 @@ export default function SDGSelector({ fieldKey, register, value = '', onChange }
                 style={{ backgroundColor: SDG_COLORS[num] }}>
                 SDG {num}: {g?.label}
                 <button type="button" onClick={() => toggle(num)}
-                  className="ml-1 opacity-70 hover:opacity-100 leading-none">✕</button>
+                  className="ml-1 opacity-70 hover:opacity-100 leading-none"></button>
               </span>
             )
           })}
@@ -74,7 +74,7 @@ export default function SDGSelector({ fieldKey, register, value = '', onChange }
                 {num}
               </span>
               <span className="truncate">{label}</span>
-              {active && <span className="ml-auto flex-shrink-0">✓</span>}
+              {active && <span className="ml-auto flex-shrink-0 text-xs font-medium">Selected</span>}
             </button>
           )
         })}

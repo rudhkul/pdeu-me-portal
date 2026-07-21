@@ -97,7 +97,7 @@ export default function NotSubmittedList() {
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold text-pdeu-blue dark:text-white mb-1">📋 Submission Status</h1>
+      <h1 className="text-2xl font-bold text-pdeu-blue dark:text-white mb-1">Submission Status</h1>
       <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">
         Track who has filled all tabs and send targeted email reminders.
       </p>
@@ -127,7 +127,7 @@ export default function NotSubmittedList() {
           {notSubmitted.length > 0 && (
             <div className="card mb-6">
               <p className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
-                ✉️ Reminder Email Message
+                 Reminder Email Message
               </p>
               <textarea
                 className="form-input text-sm"
@@ -141,11 +141,11 @@ export default function NotSubmittedList() {
                   className="btn-primary text-sm flex items-center gap-2">
                   {sentAll
                     ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"/>Sending…</>
-                    : `📧 Send to all ${notSubmitted.length} pending faculty`
+                    : ` Send to all ${notSubmitted.length} pending faculty`
                   }
                 </button>
                 <button onClick={copyEmails} className="btn-secondary text-sm">
-                  📋 Copy emails
+                   Copy emails
                 </button>
               </div>
             </div>
@@ -155,7 +155,7 @@ export default function NotSubmittedList() {
           {notSubmitted.length > 0 && (
             <div className="card mb-4">
               <h2 className="font-semibold text-gray-800 dark:text-gray-100 mb-3">
-                ⚠️ Pending ({notSubmitted.length})
+                 Pending ({notSubmitted.length})
               </h2>
               <div className="space-y-2">
                 {notSubmitted.map(u => {
@@ -183,7 +183,7 @@ export default function NotSubmittedList() {
                         className="btn-secondary text-xs flex-shrink-0 flex items-center gap-1">
                         {sending[u.id]
                           ? <div className="w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin"/>
-                          : '📧'
+                          : ''
                         }
                         Remind
                       </button>
@@ -198,13 +198,12 @@ export default function NotSubmittedList() {
           {submitted.length > 0 && (
             <div className="card">
               <h2 className="font-semibold text-gray-800 dark:text-gray-100 mb-3">
-                ✅ Completed ({submitted.length})
+                 Completed ({submitted.length})
               </h2>
               <div className="space-y-1.5">
                 {submitted.map(u => (
                   <div key={u.id}
                     className="flex items-center gap-3 px-3 py-2 bg-green-50 dark:bg-green-900/10 rounded-lg">
-                    <span className="text-green-500 flex-shrink-0">✓</span>
                     <div>
                       <p className="text-sm font-medium text-gray-800 dark:text-gray-100">{u.fullName}</p>
                       <p className="text-xs text-gray-400 dark:text-gray-500">{u.email}</p>

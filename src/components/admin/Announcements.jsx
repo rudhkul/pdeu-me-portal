@@ -17,7 +17,7 @@ export default function Announcements() {
 
   async function persist(updated) {
     setSaving(true)
-    try { await saveSettings(updated); setSettings(updated); toast.success('Saved!') }
+    try { await saveSettings(updated); setSettings(updated); toast.success('Saved.') }
     catch (e) { toast.error(e.message) }
     finally { setSaving(false) }
   }
@@ -44,11 +44,10 @@ export default function Announcements() {
     warning: 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-700 text-amber-800 dark:text-amber-300',
     urgent:  'bg-red-50   dark:bg-red-900/20   border-red-200   dark:border-red-700   text-red-800   dark:text-red-300',
   }
-  const typeIcons = { info: 'ℹ️', warning: '⚠️', urgent: '🚨' }
 
   return (
     <div className="p-6 max-w-3xl mx-auto">
-      <h1 className="text-2xl font-bold text-pdeu-blue dark:text-white mb-2">📢 Announcements</h1>
+      <h1 className="text-2xl font-bold text-pdeu-blue dark:text-white mb-2">Announcements</h1>
       <p className="text-gray-500 dark:text-gray-400 text-sm mb-8">
         Post announcements for all faculty. They appear as banners on the faculty dashboard.
       </p>
@@ -68,9 +67,9 @@ export default function Announcements() {
               <label className="form-label">Type</label>
               <select className="form-input" value={newMsg.type}
                 onChange={e => setNewMsg(p => ({ ...p, type: e.target.value }))}>
-                <option value="info">ℹ️ Info</option>
-                <option value="warning">⚠️ Warning</option>
-                <option value="urgent">🚨 Urgent</option>
+                <option value="info"> Info</option>
+                <option value="warning"> Warning</option>
+                <option value="urgent"> Urgent</option>
               </select>
             </div>
           </div>
@@ -78,10 +77,10 @@ export default function Announcements() {
             <label className="form-label">Message</label>
             <textarea className="form-input resize-none" rows={2} value={newMsg.body}
               onChange={e => setNewMsg(p => ({ ...p, body: e.target.value }))}
-              placeholder="Please ensure all Publications (Tab 5) entries for 2024-25 are filled with proof PDFs before Friday 5 PM." />
+              placeholder="Please ensure all Publications (Tab 5) records for 2024-25 are filled with supporting-document PDFs before Friday 5 PM." />
           </div>
           <button onClick={addAnnouncement} disabled={saving} className="btn-primary">
-            {saving ? '⏳ Posting…' : '📢 Post Announcement'}
+            {saving ? ' Posting…' : ' Post Announcement'}
           </button>
         </div>
       </div>
@@ -100,7 +99,6 @@ export default function Announcements() {
         <div className="space-y-3">
           {settings.announcements.map(ann => (
             <div key={ann.id} className={`border rounded-xl p-4 flex items-start gap-3 ${typeStyles[ann.type] || typeStyles.info}`}>
-              <span className="text-lg flex-shrink-0">{typeIcons[ann.type] || 'ℹ️'}</span>
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-sm">{ann.title}</p>
                 <p className="text-xs mt-0.5 opacity-80">{ann.body}</p>
@@ -108,7 +106,7 @@ export default function Announcements() {
                   Posted {new Date(ann.createdAt).toLocaleString('en-IN', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' })}
                 </p>
               </div>
-              <button onClick={() => remove(ann.id)} className="flex-shrink-0 text-xs opacity-50 hover:opacity-100">✕ Remove</button>
+              <button onClick={() => remove(ann.id)} className="flex-shrink-0 text-xs opacity-50 hover:opacity-100"> Remove</button>
             </div>
           ))}
         </div>

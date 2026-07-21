@@ -86,7 +86,7 @@ export default function TabForm() {
   async function onSubmit(values) {
     // Proof required check
     if (proofRequired && !values.drive_link) {
-      toast.error('Please upload a PDF proof before saving.')
+      toast.error('Please upload a PDF supporting document before saving.')
       return
     }
 
@@ -104,7 +104,7 @@ export default function TabForm() {
     // General duplicate check
     const dup = isDuplicate(records, values, editing)
     if (dup && !confirm(
-      `A similar entry already exists:\n"${dup.title || dup.course_name || dup.event_name || dup.student_name}"\n\nAdd anyway?`
+      `A similar record already exists:\n"${dup.title || dup.course_name || dup.event_name || dup.student_name}"\n\nSubmit another record?`
     )) return
 
     setSaving(true)
@@ -120,7 +120,7 @@ export default function TabForm() {
         setRecords(updated)
         action = cur ? 'updated' : 'added'
         window.dispatchEvent(new Event('pdeu-profile-updated'))
-        toast.success('Profile saved!')
+        toast.success('Profile saved.')
       } else if (editing) {
         setRecords(await updateRecord(tab.id, session.userId, editing, payload))
         setEditing(null); setShowForm(false); reset()
@@ -129,7 +129,7 @@ export default function TabForm() {
       } else {
         setRecords(await addRecord(tab.id, session.userId, payload))
         setShowForm(false); reset()
-        toast.success('Record saved!')
+        toast.success('Record saved.')
       }
       setIsDirty(false)
       notifyAdmin({ tabId: tab.id, tabName: tab.name, facultyName: session.fullName, action })
@@ -153,8 +153,8 @@ export default function TabForm() {
     }
     setRecords(current)
     toast.success(
-      `✅ Imported ${saved} of ${rows.length} rows!` +
-      (proofRequired ? ' Open each entry and upload a PDF proof via Edit.' : ''),
+      ` Imported ${saved} of ${rows.length} records.` +
+      (proofRequired ? ' Open each record and upload its supporting document.' : ''),
       { duration: 6000 }
     )
     notifyAdmin({ tabId: tab.id, tabName: tab.name, facultyName: session.fullName, action: `bulk-imported ${saved} records` })
@@ -210,11 +210,11 @@ export default function TabForm() {
         <Link to="/faculty" className="text-gray-400 hover:text-pdeu-blue dark:hover:text-blue-400">← Dashboard</Link>
         <span className="text-gray-300 dark:text-gray-600">/</span>
         <h1 className="font-bold text-pdeu-blue dark:text-white text-lg flex items-center gap-2">
-          {tab.icon} {tab.name}
+          {tab.name}
         </h1>
         {proofRequired && (
           <span className="ml-2 text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded-full">
-            PDF proof required
+            Supporting document required
           </span>
         )}
       </div>
@@ -235,7 +235,7 @@ export default function TabForm() {
 
       {isDirty && !saving && (
         <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg px-4 py-3 mb-4 text-sm text-amber-700 dark:text-amber-300 flex items-center gap-2">
-          ⚠️ Unsaved changes —
+           Unsaved changes —
           <kbd className="bg-amber-100 dark:bg-amber-800 px-1.5 py-0.5 rounded text-xs font-mono">Ctrl+S</kbd>
         </div>
       )}
@@ -250,7 +250,7 @@ export default function TabForm() {
         <div className="card mb-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold text-gray-800 dark:text-gray-100">
-              {editing ? '✏️ Edit Record' : tab.isProfile ? '📝 My Profile Info' : '➕ Add Single Entry'}
+              {editing ? 'Edit Record' : tab.isProfile ? 'Faculty Profile' : 'Add Record'}
             </h2>
             <p className="text-xs text-gray-400 dark:text-gray-500">
               <span className="text-red-500">*</span> Required
@@ -282,13 +282,13 @@ export default function TabForm() {
             {/* CSV import notice */}
             {editing && !watch('drive_link') && proofRequired && (
               <div className="mt-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg p-3 text-xs text-amber-700 dark:text-amber-400">
-                ⚠️ This record was imported via CSV and has no proof attached. Please upload a PDF proof above.
+                 This record was imported through CSV and does not include a supporting document. Upload the required PDF above.
               </div>
             )}
 
             <div className="flex items-center gap-3 mt-6 pt-4 border-t border-gray-100 dark:border-gray-700">
               <button id="tab-form-submit" type="submit" className="btn-primary" disabled={saving}>
-                {saving ? '⏳ Saving…' : editing ? '💾 Update' : '💾 Save'}
+                {saving ? ' Saving…' : editing ? 'Update' : 'Save'}
               </button>
               <span className="text-xs text-gray-400 dark:text-gray-500">
                 or <kbd className="bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded font-mono text-xs">Ctrl+S</kbd>
@@ -301,8 +301,8 @@ export default function TabForm() {
 
           {tab.isProfile && records[0] && (
             <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-700 text-xs text-gray-400 dark:text-gray-500 space-y-0.5">
-              <p>📅 Created: {formatDate(records[0].createdAt)}</p>
-              <p>🔄 Last updated: {formatDate(records[0].updatedAt || records[0].createdAt)}</p>
+              <p>Created: {formatDate(records[0].createdAt)}</p>
+              <p>Last updated: {formatDate(records[0].updatedAt || records[0].createdAt)}</p>
             </div>
           )}
         </div>
@@ -310,7 +310,7 @@ export default function TabForm() {
 
       {!tab.isProfile && !showForm && (
         <button onClick={() => { setEditing(null); reset(); setShowForm(true) }} className="btn-primary mb-6">
-          ➕ Add Single Entry
+           Add Record
         </button>
       )}
 
@@ -322,12 +322,12 @@ export default function TabForm() {
         <div className="card">
           <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
             <h2 className="font-semibold text-gray-800 dark:text-gray-100">
-              My Entries ({records.length})
+              Submitted Records ({records.length})
             </h2>
             {records.length > 3 && (
               <input
                 type="text"
-                placeholder="Search my entries…"
+                placeholder="Search submitted records…"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 className="form-input max-w-xs text-sm"
@@ -342,8 +342,7 @@ export default function TabForm() {
             </div>
           ) : records.length === 0 ? (
             <div className="text-center py-10 text-gray-400 dark:text-gray-500">
-              <p className="text-3xl mb-2">📭</p>
-              <p>No entries yet. Use "Add Single Entry" or "Bulk Import via CSV".</p>
+              <p>No records have been submitted. Use "Add Record" or "Bulk Import via CSV".</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -356,7 +355,7 @@ export default function TabForm() {
                       </th>
                     ))}
                     <th className="text-left px-3 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Updated</th>
-                    <th className="text-left px-3 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Proof</th>
+                    <th className="text-left px-3 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Supporting Document</th>
                     <th />
                   </tr>
                 </thead>
@@ -377,9 +376,9 @@ export default function TabForm() {
                       {/* Proof status */}
                       <td className="px-3 py-2 text-xs whitespace-nowrap">
                         {row.drive_link
-                          ? <button type="button" onClick={() => handleOpenProof(row.drive_link)} className="text-green-600 dark:text-green-400 font-medium hover:underline">✅ View PDF</button>
+                          ? <button type="button" onClick={() => handleOpenProof(row.drive_link)} className="text-green-600 dark:text-green-400 font-medium hover:underline">View Document</button>
                           : proofRequired
-                          ? <span className="text-red-500 dark:text-red-400">⚠️ Missing</span>
+                          ? <span className="text-red-500 dark:text-red-400">Not Submitted</span>
                           : <span className="text-gray-300 dark:text-gray-600">—</span>
                         }
                       </td>
@@ -394,7 +393,7 @@ export default function TabForm() {
                 </tbody>
               </table>
               {search && filteredRecords.length === 0 && (
-                <p className="text-center py-6 text-gray-400 dark:text-gray-500 text-sm">No entries match "{search}"</p>
+                <p className="text-center py-6 text-gray-400 dark:text-gray-500 text-sm">No records match "{search}"</p>
               )}
             </div>
           )}

@@ -117,7 +117,7 @@ export default function FacultyProfile() {
           </div>
           <button onClick={printProfile}
             className="btn-primary flex items-center gap-2">
-            🖨️ Export Full PDF
+             Export Full PDF
           </button>
         </div>
 
@@ -137,7 +137,7 @@ export default function FacultyProfile() {
             <div key={tab.id} className="card mb-4">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
-                  {tab.icon} {tab.number}. {tab.name}
+                  {tab.number}. {tab.name}
                 </h3>
                 <span className="text-xs bg-pdeu-light dark:bg-gray-700 text-pdeu-blue dark:text-blue-400 px-2 py-0.5 rounded-full font-medium">
                   {records.length} {records.length === 1 ? 'entry' : 'entries'}
@@ -152,7 +152,7 @@ export default function FacultyProfile() {
                           {f.label}
                         </th>
                       ))}
-                      <th className="px-2 py-1.5 text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wide">Proof</th>
+                      <th className="px-2 py-1.5 text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wide">Supporting Document</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -166,7 +166,7 @@ export default function FacultyProfile() {
                         ))}
                         <td className="px-2 py-1.5">
                           {rec.drive_link
-                            ? <span className="text-green-600 dark:text-green-400">✅</span>
+                            ? <span className="text-green-600 dark:text-green-400">Available</span>
                             : <span className="text-gray-300 dark:text-gray-600">—</span>}
                         </td>
                       </tr>
@@ -180,7 +180,6 @@ export default function FacultyProfile() {
 
         {totalRecs === 0 && (
           <div className="text-center py-16 text-gray-400 dark:text-gray-500">
-            <p className="text-4xl mb-3">📭</p>
             <p>No data yet. Fill in your tabs from the dashboard.</p>
           </div>
         )}
@@ -244,13 +243,13 @@ export default function FacultyProfile() {
 
           return (
             <div key={tab.id} className={`print-card ${tabIdx > 0 && tabIdx % 3 === 0 ? 'page-break' : ''}`}>
-              <h3>{tab.icon} {tab.number}. {tab.name} ({records.length} {records.length === 1 ? 'entry' : 'entries'})</h3>
+              <h3>{tab.number}. {tab.name} ({records.length} {records.length === 1 ? 'entry' : 'entries'})</h3>
               <table className="print-table">
                 <thead>
                   <tr>
                     <th style={{ width: '20pt' }}>#</th>
                     {mainFields.slice(0, 6).map(f => <th key={f.key}>{f.label}</th>)}
-                    <th>Proof</th>
+                    <th>Supporting Document</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -263,7 +262,7 @@ export default function FacultyProfile() {
                         </td>
                       ))}
                       <td style={{ textAlign: 'center' }}>
-                        {rec.drive_link ? '✓' : '—'}
+                        {rec.drive_link ? '' : '—'}
                       </td>
                     </tr>
                   ))}
@@ -275,7 +274,7 @@ export default function FacultyProfile() {
 
         {/* Footer */}
         <div className="print-footer">
-          Powered by DIC Mechanical · © DIC Mechanical, PDEU · Coded by Anirudh Kulkarni, PhD.
+          Department of Mechanical Engineering · PDEU · Portal developed and maintained by Dr Anirudh Kulkarni.
         </div>
       </div>
     </>

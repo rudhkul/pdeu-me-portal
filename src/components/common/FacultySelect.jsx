@@ -4,7 +4,7 @@ import { getAllFaculties } from '../../lib/github'
 /**
  * Multi-select picker for department faculty.
  * Stores as semicolon-separated names e.g. "Dr. Vivek Jaiswal;Dr. Krunal Patel"
- * Used in Tab 5 to tag dept faculty co-authors — prevents duplicate publication entries.
+ * Used in Tab 5 to tag dept faculty co-authors — prevents duplicate publication records.
  */
 export default function FacultySelect({ fieldKey, register, value = '', onChange, currentFacultyName }) {
   const [faculties,  setFaculties]  = useState([])
@@ -50,7 +50,7 @@ export default function FacultySelect({ fieldKey, register, value = '', onChange
               className="inline-flex items-center gap-1 bg-pdeu-blue text-white text-xs px-2 py-1 rounded-full">
               {name}
               <button type="button" onClick={() => toggle(name)}
-                className="opacity-70 hover:opacity-100 ml-0.5">✕</button>
+                className="opacity-70 hover:opacity-100 ml-0.5"></button>
             </span>
           ))}
         </div>
@@ -86,7 +86,7 @@ export default function FacultySelect({ fieldKey, register, value = '', onChange
                   {f.fullName[0]?.toUpperCase()}
                 </div>
                 <span className="truncate">{f.fullName}</span>
-                {active && <span className="ml-auto flex-shrink-0 text-xs">✓</span>}
+                {active && <span className="ml-auto flex-shrink-0 text-xs font-medium">Selected</span>}
               </button>
             )
           })}
@@ -94,7 +94,7 @@ export default function FacultySelect({ fieldKey, register, value = '', onChange
       </div>
 
       <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-        Select dept. colleagues who co-authored this publication — avoids duplicate entries in their profile.
+        Select dept. colleagues who co-authored this publication — avoids duplicate records in their profile.
       </p>
     </div>
   )

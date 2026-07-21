@@ -5,7 +5,7 @@ import toast from 'react-hot-toast'
 const WORKER = import.meta.env.VITE_WORKER_URL
 const API    = `${WORKER}/api`
 
-// Download a proof PDF by its stored GitHub path e.g. "proofs/tab5/usr_abc/file.pdf"
+// Download a supporting-document PDF by its stored GitHub path e.g. "proofs/tab5/usr_abc/file.pdf"
 // Uses the raw content API which works for files up to 100 MB without size limits.
 async function fetchProofBlob(githubPath) {
   // Use the raw media type — returns the file bytes directly, no base64, no size limit
@@ -62,7 +62,7 @@ async function buildExcelBuffer(rows, columns, sheetName) {
 }
 
 /**
- * Admin: Download all proof PDFs + Excel as a single ZIP.
+ * Admin: Download all supporting-document PDFs + Excel as a single ZIP.
  *
  * Props:
  *   rows    — filtered record rows (already filtered by faculty/year)
@@ -90,7 +90,7 @@ export default function ProofDownloader({ rows, columns, tab, label }) {
 
   async function downloadZip() {
     if (!withProof.length) {
-      toast.error('No proof files found for these records.')
+      toast.error('No supporting document files found for these records.')
       return
     }
 
@@ -109,7 +109,7 @@ export default function ProofDownloader({ rows, columns, tab, label }) {
       console.warn('Excel build failed:', e.message)
     }
 
-    // 2 — Proof PDFs
+    // 2 — Supporting-document PDFs
     const proofFolder = zip.folder('proofs')
     for (let i = 0; i < withProof.length; i++) {
       const row = withProof[i]
@@ -150,7 +150,7 @@ Error: ${e.message}`
       const ok = withProof.length - failed
       toast.success(
         failed === 0
-          ? `✅ Downloaded ${ok} proof PDF${ok !== 1 ? 's' : ''} + Excel in one ZIP`
+          ? ` Downloaded ${ok} supporting-document PDF${ok !== 1 ? 's' : ''} + Excel in one ZIP`
           : `Downloaded ${ok} proofs + Excel. ${failed} file${failed !== 1 ? 's' : ''} failed.`,
         { id: 'proof-zip', duration: 6000 }
       )
@@ -172,10 +172,10 @@ Error: ${e.message}`
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="min-w-0">
           <p className="text-sm font-semibold text-purple-800 dark:text-purple-300 flex items-center gap-2">
-            📦 Download Excel + Proof PDFs as ZIP
+             Download Excel + Supporting-document PDFs as ZIP
           </p>
           <p className="text-xs text-purple-600 dark:text-purple-400 mt-0.5">
-            {withProof.length} proof file{withProof.length !== 1 ? 's' : ''} in current filter
+            {withProof.length} supporting document file{withProof.length !== 1 ? 's' : ''} in current filter
             {withoutProof > 0 && <span className="text-gray-400 ml-1">· {withoutProof} record{withoutProof !== 1 ? 's' : ''} without proof</span>}
           </p>
 
@@ -204,8 +204,8 @@ Error: ${e.message}`
           {status === 'working'
             ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Working…</>
             : status === 'done'
-            ? '✅ Done!'
-            : '📦 Download ZIP'
+            ? 'Completed'
+            : 'Download ZIP'
           }
         </button>
       </div>
