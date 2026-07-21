@@ -31,14 +31,14 @@ export default function ChangePassword() {
 
   return (
     <div className="p-6 max-w-md mx-auto">
-      <h1 className="text-2xl font-bold text-pdeu-blue dark:text-white mb-2">🔒 Change Password</h1>
+      <h1 className="text-2xl font-bold text-pdeu-blue dark:text-white mb-2">Change Password</h1>
       <p className="text-gray-500 dark:text-gray-400 text-sm mb-8">
         Logged in as <strong className="text-gray-700 dark:text-gray-200">{session?.fullName}</strong>
       </p>
 
       {done && (
         <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl px-4 py-3 mb-6 text-sm text-green-700 dark:text-green-400">
-          ✅ Password updated. Use your new password next time you log in.
+           Password updated. Use your new password next time you log in.
         </div>
       )}
 
@@ -56,7 +56,7 @@ export default function ChangePassword() {
             </div>
           ))}
           <button type="submit" className="btn-primary w-full mt-2" disabled={loading}>
-            {loading ? '⏳ Saving…' : 'Change Password'}
+            {loading ? ' Saving…' : 'Change Password'}
           </button>
         </form>
       </div>

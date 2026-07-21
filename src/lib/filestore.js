@@ -100,7 +100,7 @@ export async function openStoredFileInBrowser(storedPath) {
   }
 }
 
-// ── Proof PDFs ────────────────────────────────────────────────
+// ── Supporting-document PDFs ────────────────────────────────────────────────
 
 export function buildFileName(tabId, facultyName, formValues) {
   const tabNum   = tabId.replace('tab', '').padStart(2, '0')

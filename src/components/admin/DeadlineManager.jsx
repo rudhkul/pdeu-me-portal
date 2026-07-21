@@ -15,7 +15,7 @@ export default function DeadlineManager() {
 
   async function save() {
     setSaving(true)
-    try { await saveSettings(settings); toast.success('Deadline saved!') }
+    try { await saveSettings(settings); toast.success('Deadline saved.') }
     catch (e) { toast.error(e.message) }
     finally { setSaving(false) }
   }
@@ -42,7 +42,7 @@ export default function DeadlineManager() {
 
   return (
     <div className="p-6 max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold text-pdeu-blue dark:text-white mb-2">⏰ Submission Deadline</h1>
+      <h1 className="text-2xl font-bold text-pdeu-blue dark:text-white mb-2">Submission Deadline</h1>
       <p className="text-gray-500 dark:text-gray-400 text-sm mb-8">
         Set a data collection deadline. Faculty see a countdown banner on their dashboard.
       </p>
@@ -54,9 +54,9 @@ export default function DeadlineManager() {
             {new Date(settings.deadline).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
           </p>
           <p className="text-sm mt-1 text-gray-600 dark:text-gray-300">
-            {daysLeft < 0 ? `⚠️ Deadline passed ${Math.abs(daysLeft)} days ago`
-              : daysLeft === 0 ? '⚠️ Deadline is TODAY'
-              : `✅ ${daysLeft} day${daysLeft !== 1 ? 's' : ''} remaining`}
+            {daysLeft < 0 ? ` Deadline passed ${Math.abs(daysLeft)} days ago`
+              : daysLeft === 0 ? 'Deadline is today'
+              : ` ${daysLeft} day${daysLeft !== 1 ? 's' : ''} remaining`}
           </p>
           {settings.message && <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 italic">"{settings.message}"</p>}
         </div>
@@ -79,7 +79,7 @@ export default function DeadlineManager() {
         </div>
         <div className="flex gap-3 pt-2">
           <button onClick={save} disabled={saving || !settings.deadline} className="btn-primary">
-            {saving ? '⏳ Saving…' : '💾 Set Deadline'}
+            {saving ? ' Saving…' : 'Set Deadline'}
           </button>
           {settings.deadline && (
             <button onClick={clear} disabled={saving} className="btn-secondary !text-red-500 !border-red-300">

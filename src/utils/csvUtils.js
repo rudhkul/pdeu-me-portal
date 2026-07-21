@@ -40,7 +40,7 @@ export function downloadTemplate(tab) {
   // Add a note row about SDG and PDFs
   const noteLine = [
     'NOTE: SDG Goals — enter comma-separated numbers e.g. 3,7,13 | ' +
-    'PDF proofs — upload after import via the Edit button in the portal'
+    'PDF supporting documents — upload after import via the Edit button in the portal'
   ]
 
   const rows = [headers, hints, noteLine]
@@ -96,7 +96,7 @@ export function parseCSV(text, tab) {
 
   labelToKey[normalizeHeader('Drive Link')] = 'drive_link'
   labelToKey[normalizeHeader('OneDrive / Drive Link')] = 'drive_link'
-  labelToKey[normalizeHeader('Proof Link')] = 'drive_link'
+  labelToKey[normalizeHeader('Supporting Document Link')] = 'drive_link'
 
   const colMap = headerRow.map(h =>
     labelToKey[normalizeHeader(h)] || null

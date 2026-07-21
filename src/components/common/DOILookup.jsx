@@ -61,7 +61,7 @@ export default function DOILookup({ onFill, facultyName }) {
 
       onFill(fields)
       const n = Object.keys(fields).length
-      toast.success(`Auto-filled ${n} fields! Check and add what's missing.`)
+      toast.success(`Publication details retrieved. Review and complete any missing fields.`)
     } catch (e) {
       toast.error(e.message)
     } finally {
@@ -72,11 +72,11 @@ export default function DOILookup({ onFill, facultyName }) {
   return (
     <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-xl">
       <p className="text-sm font-semibold text-blue-800 dark:text-blue-300 mb-1 flex items-center gap-2">
-        🔍 Auto-fill from DOI
+         Retrieve Publication Details by DOI
         <span className="font-normal text-xs text-blue-500 dark:text-blue-400">— powered by CrossRef</span>
       </p>
       <p className="text-xs text-blue-600 dark:text-blue-400 mb-3">
-        Paste your DOI to auto-fill title, authors, journal, volume, pages, and more.
+        Enter a DOI to retrieve the title, authors, journal, volume, pages and related publication details.
         Affiliations from CrossRef are often incomplete — we'll set yours to PDEU automatically.
       </p>
 
@@ -97,7 +97,7 @@ export default function DOILookup({ onFill, facultyName }) {
         >
           {loading
             ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"/>Fetching…</>
-            : '🔍 Fetch'
+            : 'Retrieve'
           }
         </button>
       </div>
@@ -106,18 +106,18 @@ export default function DOILookup({ onFill, facultyName }) {
       {result && (
         <div className="mt-3 bg-white dark:bg-gray-800 rounded-lg p-3 border border-blue-100 dark:border-blue-800 text-xs space-y-1">
           <p className="font-semibold text-gray-700 dark:text-gray-300">Filled from CrossRef:</p>
-          {result.title?.[0] && <p className="text-gray-600 dark:text-gray-400">📄 <strong>Title:</strong> {result.title[0].slice(0, 80)}…</p>}
+          {result.title?.[0] && <p className="text-gray-600 dark:text-gray-400"> <strong>Title:</strong> {result.title[0].slice(0, 80)}…</p>}
           {result.author?.length && (
             <p className="text-gray-600 dark:text-gray-400">
-              👥 <strong>Authors:</strong> {result.author.length} author(s) found
+               <strong>Authors:</strong> {result.author.length} author(s) found
               {result.author.some(a => a.affiliation?.length)
                 ? ' (with affiliations)'
-                : ' — affiliations not in CrossRef, set to PDEU for your entry'
+                : ' — affiliations not in CrossRef, set to PDEU for your record'
               }
             </p>
           )}
-          {result['container-title']?.[0] && <p className="text-gray-600 dark:text-gray-400">📰 <strong>Journal:</strong> {result['container-title'][0]}</p>}
-          <p className="text-blue-500 dark:text-blue-400 pt-1">✏️ Review and complete any missing fields below.</p>
+          {result['container-title']?.[0] && <p className="text-gray-600 dark:text-gray-400"> <strong>Journal:</strong> {result['container-title'][0]}</p>}
+          <p className="text-blue-500 dark:text-blue-400 pt-1">Review the retrieved details and complete any missing fields.</p>
         </div>
       )}
     </div>

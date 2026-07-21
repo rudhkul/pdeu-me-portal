@@ -29,7 +29,7 @@ function NavItem({ to, icon, label, open, end = false }) {
     }`
   return (
     <NavLink to={to} end={end} className={cls}>
-      <span className="flex-shrink-0 text-base">{icon}</span>
+      {icon && <span className="flex-shrink-0 text-xs font-semibold tracking-wide">{icon}</span>}
       {open
         ? <span className="truncate">{label}</span>
         : <span className="
@@ -50,13 +50,13 @@ function ModeSwitcher({ viewMode, onSwitchView, open }) {
     return (
       <div className="px-2 mb-2">
         <button
-          title={isAdmin ? 'Switch to My Faculty Data' : 'Switch to Admin View'}
+          title={isAdmin ? 'Switch to Faculty Records' : 'Switch to Administration'}
           onClick={() => onSwitchView(isAdmin ? 'faculty' : 'admin')}
           className="w-10 h-10 rounded-xl flex items-center justify-center text-lg
                      bg-pdeu-light dark:bg-gray-700 hover:bg-blue-100 dark:hover:bg-gray-600
                      transition-colors mx-auto"
         >
-          {isAdmin ? '👤' : '🛡️'}
+          {isAdmin ? 'F' : 'A'}
         </button>
       </div>
     )
@@ -65,7 +65,7 @@ function ModeSwitcher({ viewMode, onSwitchView, open }) {
   return (
     <div className="px-2 mb-3">
       <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-1 mb-2">
-        Current Mode
+        Current View
       </p>
       <div className="flex rounded-xl overflow-hidden border border-gray-200 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 p-1 gap-1">
         <button
@@ -76,7 +76,7 @@ function ModeSwitcher({ viewMode, onSwitchView, open }) {
               : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
           }`}
         >
-          🛡️ Admin
+          Administration
         </button>
         <button
           onClick={() => onSwitchView('faculty')}
@@ -86,12 +86,12 @@ function ModeSwitcher({ viewMode, onSwitchView, open }) {
               : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
           }`}
         >
-          👤 My Data
+          Faculty Records
         </button>
       </div>
       {isFaculty && (
         <p className="text-xs text-amber-600 dark:text-amber-400 mt-2 px-1 flex items-center gap-1">
-          <span>⚠️</span> You are filling your own faculty data
+          Faculty data-entry view
         </p>
       )}
     </div>
@@ -224,18 +224,18 @@ export default function Layout({ children }) {
           {isAdmin && viewMode === 'admin' && (
             <>
               {open && <p className="section-heading">Admin</p>}
-              <NavItem to="/admin" icon="📊" label="Dashboard" open={open} end />
-              <NavItem to="/admin/export" icon="📥" label="Export Builder" open={open} />
-              <NavItem to="/admin/users" icon="👥" label="User Management" open={open} />
-              <NavItem to="/admin/deadline" icon="⏰" label="Set Deadline" open={open} />
-              <NavItem to="/admin/notifications" icon="📧" label="Email Notifications" open={open} />
-              <NavItem to="/admin/announcements" icon="📢" label="Announcements" open={open} />
-              <NavItem to="/admin/not-submitted" icon="📋" label="Submission Status" open={open} />
-              <NavItem to="/admin/passwords" icon="🔑" label="Reset Passwords" open={open} />
-              {open && <p className="section-heading mt-3">All Tabs</p>}
+              <NavItem to="/admin" icon="DB" label="Dashboard" open={open} end />
+              <NavItem to="/admin/export" icon="EX" label="Export Builder" open={open} />
+              <NavItem to="/admin/users" icon="UM" label="User Management" open={open} />
+              <NavItem to="/admin/deadline" icon="DL" label="Deadline Management" open={open} />
+              <NavItem to="/admin/notifications" icon="EN" label="Email Notifications" open={open} />
+              <NavItem to="/admin/announcements" icon="AN" label="Announcements" open={open} />
+              <NavItem to="/admin/not-submitted" icon="SS" label="Submission Status" open={open} />
+              <NavItem to="/admin/passwords" icon="RP" label="Reset Passwords" open={open} />
+              {open && <p className="section-heading mt-3">Data Sections</p>}
               {TABS.map(tab => (
                 <NavItem key={tab.id} to={`/admin/tab/${tab.id}`}
-                  icon={tab.icon} label={`${tab.number}. ${tab.name}`} open={open} />
+                  icon={String(tab.number).padStart(2, '0')} label={tab.name} open={open} />
               ))}
             </>
           )}
@@ -244,21 +244,21 @@ export default function Layout({ children }) {
             <>
               {open && (
                 <p className="section-heading">
-                  {showingFacultyView ? 'My Faculty Data' : 'My Data'}
+                  {showingFacultyView ? 'Faculty Records' : 'Faculty Records'}
                 </p>
               )}
-              <NavItem to="/faculty" icon="🏠" label="Dashboard" open={open} end />
-              <NavItem to="/faculty/profile" icon="🖨️" label="Print Summary" open={open} />
+              <NavItem to="/faculty" icon="DB" label="Dashboard" open={open} end />
+              <NavItem to="/faculty/profile" icon="PS" label="Print Summary" open={open} />
               {TABS.map(tab => (
                 <NavItem key={tab.id} to={`/faculty/tab/${tab.id}`}
-                  icon={tab.icon} label={`${tab.number}. ${tab.name}`} open={open} />
+                  icon={String(tab.number).padStart(2, '0')} label={tab.name} open={open} />
               ))}
             </>
           )}
         </nav>
 
         <div className="border-t border-gray-100 dark:border-gray-700 p-3 space-y-1">
-          <NavItem to="/change-password" icon="🔒" label="Change Password" open={open} />
+          <NavItem to="/change-password" icon="CP" label="Change Password" open={open} />
 
           <button
             onClick={() => setDark(d => !d)}
@@ -266,7 +266,7 @@ export default function Layout({ children }) {
                        text-gray-600 dark:text-gray-300
                        hover:bg-pdeu-light dark:hover:bg-gray-700 hover:text-pdeu-blue transition-colors"
           >
-            <span className="flex-shrink-0">{dark ? '☀️' : '🌙'}</span>
+            <span className="flex-shrink-0">{dark ? 'LM' : 'DM'}</span>
             {open && <span>{dark ? 'Light Mode' : 'Dark Mode'}</span>}
           </button>
 
@@ -381,11 +381,11 @@ export default function Layout({ children }) {
               onClick={() => handleSwitchView(viewMode === 'admin' ? 'faculty' : 'admin')}
               className="ml-2 text-xs px-2 py-1 rounded-lg bg-pdeu-light dark:bg-gray-700 text-pdeu-blue font-medium"
             >
-              {viewMode === 'admin' ? '👤 My Data' : '🛡️ Admin'}
+              {viewMode === 'admin' ? 'Faculty Records' : 'Administration'}
             </button>
           )}
           <button onClick={() => setDark(d => !d)} className="ml-auto text-xl">
-            {dark ? '☀️' : '🌙'}
+            {dark ? 'LM' : 'DM'}
           </button>
         </div>
 

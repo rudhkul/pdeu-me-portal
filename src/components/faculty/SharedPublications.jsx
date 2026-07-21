@@ -3,8 +3,8 @@ import { getAllRecordsForTab, getAllFaculties } from '../../lib/github'
 
 /**
  * Shows publications where the current faculty is tagged as a dept co-author
- * (via the dept_coauthors field in someone else's tab5 entry).
- * Prevents duplicate data entry — if you're tagged, no need to re-enter.
+ * (via the dept_coauthors field in someone else's tab5 record).
+ * Avoids duplicate publication records for departmental co-authors.
  */
 export default function SharedPublications({ session }) {
   const [sharedPubs, setSharedPubs] = useState([])
@@ -49,13 +49,13 @@ export default function SharedPublications({ session }) {
     <div className="card mb-6 border-l-4 border-pdeu-blue">
       <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
         <h3 className="font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
-          🔗 Publications Shared by Colleagues
+           Publications Entered by Departmental Co-authors
           <span className="text-xs bg-pdeu-light dark:bg-blue-900/30 text-pdeu-blue dark:text-blue-400 px-2 py-0.5 rounded-full font-medium">
-            {sharedPubs.length} entries
+            {sharedPubs.length} {sharedPubs.length === 1 ? 'record' : 'records'}
           </span>
         </h3>
         <p className="text-xs text-gray-400 dark:text-gray-500">
-          You are tagged as co-author — no need to re-enter these
+          Publications attributed to you as a departmental co-author
         </p>
       </div>
 
@@ -65,8 +65,8 @@ export default function SharedPublications({ session }) {
             className="bg-gray-50 dark:bg-gray-700/50 border border-gray-100 dark:border-gray-700 rounded-lg px-4 py-3">
             <div className="flex items-start gap-3">
               <span className="text-base flex-shrink-0 mt-0.5">
-                {pub.pub_type === 'Journal Paper' ? '📰' :
-                 pub.pub_type === 'Conference Paper' ? '🎤' : '📄'}
+                {pub.pub_type === 'Journal Paper' ? '' :
+                 pub.pub_type === 'Conference Paper' ? '' : ''}
               </span>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-gray-800 dark:text-gray-100 leading-snug">
@@ -106,7 +106,7 @@ export default function SharedPublications({ session }) {
                 </div>
               </div>
               {pub.drive_link && (
-                <span className="text-xs text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5">✅ PDF</span>
+                <span className="text-xs text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5">Supporting document available</span>
               )}
             </div>
           </div>
@@ -114,7 +114,7 @@ export default function SharedPublications({ session }) {
       </div>
 
       <p className="text-xs text-gray-400 dark:text-gray-500 mt-3">
-        These appear in admin exports under your name automatically. Contact the entry owner to correct any errors.
+        These records are included under your name in administrative exports. Contact the record owner to request corrections.
       </p>
     </div>
   )

@@ -18,8 +18,8 @@ function isValidDriveLink(url) {
 
 function validateRow(row) {
   const link = row.drive_link || ''
-  if (!link)              return 'Missing proof link'
-  if (!isValidDriveLink(link)) return 'Invalid proof link (must be OneDrive or Google Drive)'
+  if (!link)              return 'Missing supporting document link'
+  if (!isValidDriveLink(link)) return 'Invalid supporting document link (must be OneDrive or Google Drive)'
   return null   // valid
 }
 
@@ -76,7 +76,7 @@ export default function CSVImport({ tab, onImport, disabled }) {
         className="btn-secondary text-sm flex items-center gap-2"
         disabled={disabled}
       >
-        📂 Bulk Import via CSV
+         Bulk Import via CSV
         <span className={`text-xs transition-transform ${open ? 'rotate-180' : ''}`}>▼</span>
       </button>
 
@@ -93,7 +93,7 @@ export default function CSVImport({ tab, onImport, disabled }) {
                 Pre-formatted CSV with all column headers. Fill it in Excel or Google Sheets.
                 <br />
                 <span className="text-amber-600 dark:text-amber-400 font-medium">
-                  ⚠️ Every row must have a valid OneDrive or Google Drive proof link.
+                   Every row must have a valid OneDrive or Google Drive supporting document link.
                 </span>
               </p>
             </div>
@@ -102,7 +102,7 @@ export default function CSVImport({ tab, onImport, disabled }) {
               onClick={() => downloadTemplate(tab)}
               className="btn-secondary text-sm flex items-center gap-2 whitespace-nowrap"
             >
-              ⬇️ Download Template
+              ⬇ Download Template
             </button>
           </div>
 
@@ -115,7 +115,7 @@ export default function CSVImport({ tab, onImport, disabled }) {
                 Step 2 — Upload your filled CSV
               </p>
               <p className="text-xs text-gray-400 dark:text-gray-500">
-                Do not change the column headers. Rows with missing or invalid proof links will be rejected.
+                Do not change the column headers. Rows with missing or invalid supporting document links will be rejected.
               </p>
             </div>
             <div>
@@ -123,9 +123,9 @@ export default function CSVImport({ tab, onImport, disabled }) {
                 onChange={handleFile} className="hidden" id="csv-upload-input" />
               <label htmlFor="csv-upload-input"
                 className="btn-primary text-sm cursor-pointer flex items-center gap-2 whitespace-nowrap">
-                📤 Upload CSV
+                 Upload CSV
               </label>
-              {fileName && <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">📎 {fileName}</p>}
+              {fileName && <p className="text-xs text-gray-400 dark:text-gray-500 mt-1"> {fileName}</p>}
             </div>
           </div>
 
@@ -142,8 +142,8 @@ export default function CSVImport({ tab, onImport, disabled }) {
           {/* Proof link reminder */}
           {preview?.records?.length > 0 && (
             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-xl p-3 text-xs text-blue-700 dark:text-blue-300">
-              <p className="font-semibold mb-1">📂 OneDrive folder structure for proofs:</p>
-              <p>Upload your proof files to the correct subfolder in our shared OneDrive, then paste the sharing link in the <strong>drive_link</strong> column.</p>
+              <p className="font-semibold mb-1">OneDrive folder structure for supporting documents:</p>
+              <p>Upload your supporting document files to the correct subfolder in our shared OneDrive, then paste the sharing link in the <strong>drive_link</strong> column.</p>
               <p className="mt-1 font-mono text-xs text-blue-500 dark:text-blue-400">
                 ME_Portal_Proofs / {tab.number}_{tab.name.replace(/[^a-zA-Z0-9]/g, '_')} / your-file
               </p>
@@ -156,11 +156,11 @@ export default function CSVImport({ tab, onImport, disabled }) {
               {/* Summary */}
               <div className="flex gap-3 flex-wrap">
                 <span className="text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-3 py-1 rounded-full font-medium">
-                  ✅ {validRows.length} valid row{validRows.length !== 1 ? 's' : ''} — will be imported
+                   {validRows.length} valid row{validRows.length !== 1 ? 's' : ''} — will be imported
                 </span>
                 {hasInvalid && (
                   <span className="text-xs bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 px-3 py-1 rounded-full font-medium">
-                    ❌ {invalidRows.length} row{invalidRows.length !== 1 ? 's' : ''} rejected — see details below
+                     {invalidRows.length} row{invalidRows.length !== 1 ? 's' : ''} rejected — see details below
                   </span>
                 )}
               </div>
@@ -175,7 +175,7 @@ export default function CSVImport({ tab, onImport, disabled }) {
                           {f.label}
                         </th>
                       ))}
-                      <th className="px-3 py-2 text-left text-pdeu-blue dark:text-blue-400 font-semibold">Proof Link</th>
+                      <th className="px-3 py-2 text-left text-pdeu-blue dark:text-blue-400 font-semibold">Supporting Document Link</th>
                       <th className="px-3 py-2 text-left text-pdeu-blue dark:text-blue-400 font-semibold">Status</th>
                     </tr>
                   </thead>
@@ -199,15 +199,15 @@ export default function CSVImport({ tab, onImport, disabled }) {
                           title={row.drive_link || ''}>
                           {row.drive_link
                             ? isValidDriveLink(row.drive_link)
-                              ? <span className="text-green-600 dark:text-green-400">✓ Valid</span>
-                              : <span className="text-red-500 dark:text-red-400">✗ Invalid domain</span>
-                            : <span className="text-red-500 dark:text-red-400">✗ Missing</span>
+                              ? <span className="text-green-600 dark:text-green-400">Valid</span>
+                              : <span className="text-red-500 dark:text-red-400">Invalid domain</span>
+                            : <span className="text-red-500 dark:text-red-400">Not Submitted</span>
                           }
                         </td>
                         <td className="px-3 py-1.5 whitespace-nowrap">
                           {row._error
-                            ? <span className="text-red-500 dark:text-red-400 font-medium">✗ Rejected</span>
-                            : <span className="text-green-600 dark:text-green-400 font-medium">✓ Ready</span>
+                            ? <span className="text-red-500 dark:text-red-400 font-medium">Rejected</span>
+                            : <span className="text-green-600 dark:text-green-400 font-medium">Ready</span>
                           }
                         </td>
                       </tr>
@@ -225,7 +225,7 @@ export default function CSVImport({ tab, onImport, disabled }) {
               {hasInvalid && (
                 <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg p-3">
                   <p className="text-xs font-semibold text-red-700 dark:text-red-400 mb-1">
-                    ❌ Rejected rows — fix these in your CSV and re-upload:
+                     Rejected rows — fix these in your CSV and re-upload:
                   </p>
                   {invalidRows.slice(0, 5).map((row, i) => (
                     <p key={i} className="text-xs text-red-600 dark:text-red-400">
@@ -248,7 +248,7 @@ export default function CSVImport({ tab, onImport, disabled }) {
                   >
                     {saving
                       ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Importing {validRows.length} rows…</>
-                      : `✅ Import ${validRows.length} Valid Row${validRows.length !== 1 ? 's' : ''}`
+                      : ` Import ${validRows.length} Valid Row${validRows.length !== 1 ? 's' : ''}`
                     }
                   </button>
                   <button type="button" onClick={() => { setPreview(null); setFileName('') }}
@@ -261,7 +261,7 @@ export default function CSVImport({ tab, onImport, disabled }) {
               {validRows.length === 0 && (
                 <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg p-3">
                   <p className="text-sm font-semibold text-red-700 dark:text-red-400">
-                    ⚠️ No rows can be imported — all rows are missing valid proof links.
+                     No rows can be imported — all rows are missing valid supporting document links.
                   </p>
                   <p className="text-xs text-red-600 dark:text-red-400 mt-1">
                     Add valid OneDrive or Google Drive sharing links to the <strong>drive_link</strong> column and re-upload.

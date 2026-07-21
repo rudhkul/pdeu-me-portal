@@ -43,7 +43,6 @@ export function AuthProvider({ children }) {
       warnTimer = setTimeout(() => {
         toast('⏰ Your session expires in 15 minutes. Save your work and log in again to continue.', {
           duration: 10000,
-          icon: '⚠️',
         })
       }, warnDelay)
     }

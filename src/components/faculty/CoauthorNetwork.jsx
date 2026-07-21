@@ -45,7 +45,7 @@ export default function CoauthorNetwork({ publications = [], facultyName }) {
       }
     }
 
-    const entries = Object.entries(coauthorMap)
+    const records = Object.entries(coauthorMap)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 30)  // max 30 co-authors
 
@@ -74,7 +74,7 @@ export default function CoauthorNetwork({ publications = [], facultyName }) {
       '#0d9488','#c026d3','#65a30d','#b45309','#1d4ed8',
     ]
 
-    const n = entries.length + 1  // +1 for the faculty node
+    const n = records.length + 1  // +1 for the faculty node
     const facultyShort = (facultyName || 'Faculty').split(' ').pop()
     const nodes = [{ name: facultyShort, count: filtered.length }, ...entries.map(([name, count]) => ({ name, count }))]
     const maxCount = Math.max(...entries.map(e => e[1]))
@@ -172,7 +172,7 @@ export default function CoauthorNetwork({ publications = [], facultyName }) {
     <div className="card mb-6 print:shadow-none print:border print:border-gray-200">
       <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
         <h2 className="font-semibold text-gray-800 dark:text-gray-100">
-          🕸️ Co-author Network
+           Co-author Network
         </h2>
         <div className="flex items-center gap-2">
           <span className="text-xs text-gray-500 dark:text-gray-400">Filter year:</span>
@@ -189,7 +189,6 @@ export default function CoauthorNetwork({ publications = [], facultyName }) {
 
       {publications.length === 0 ? (
         <div className="text-center py-10 text-gray-400 dark:text-gray-500">
-          <p className="text-3xl mb-2">📄</p>
           <p className="text-sm">Add publications in Tab 5 to see your co-author network.</p>
         </div>
       ) : (

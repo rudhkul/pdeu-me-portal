@@ -83,10 +83,10 @@ function ProofLinkField({ fieldKey, register, required, error, tabNum, tabName }
   const folderPath  = `ME_Portal_Proofs / ${padded}_${safeTabName}`
 
   const reg = register(fieldKey, {
-    required: required ? 'A proof link from OneDrive or Google Drive is required' : false,
+    required: required ? 'A supporting document link from OneDrive or Google Drive is required' : false,
     validate: val => {
       if (!val && !required) return true
-      if (!val)              return 'A proof link is required — upload the file to OneDrive first'
+      if (!val)              return 'A supporting document link is required — upload the file to OneDrive first'
       if (!isValidDriveLink(val))
         return 'Must be from OneDrive (sharepoint.com / onedrive.live.com) or Google Drive'
       return true
@@ -102,11 +102,11 @@ function ProofLinkField({ fieldKey, register, required, error, tabNum, tabName }
         className={`form-input ${error ? 'border-red-400 ring-1 ring-red-200' : ''}`}
       />
       <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-lg px-3 py-2 text-xs space-y-1">
-        <p className="font-semibold text-blue-700 dark:text-blue-300">📁 How to get the link:</p>
+        <p className="font-semibold text-blue-700 dark:text-blue-300"> How to get the link:</p>
         <ol className="text-blue-600 dark:text-blue-400 space-y-0.5 list-decimal list-inside">
           <li>Open the shared OneDrive folder</li>
           <li>Navigate to <span className="font-mono bg-blue-100 dark:bg-blue-900 px-1 rounded">{folderPath}</span></li>
-          <li>Upload your proof file there</li>
+          <li>Upload your supporting document file there</li>
           <li>Right-click the file → Share → Copy link → paste above</li>
         </ol>
       </div>
@@ -114,14 +114,14 @@ function ProofLinkField({ fieldKey, register, required, error, tabNum, tabName }
   )
 }
 
-// ── Multi-file input (file type — optional proof links) ───────
+// ── Multi-file input (file type — optional supporting document links) ───────
 function MultiFileInput({ fieldKey, register, required, error }) {
   const [links, setLinks] = useState([''])
   const reg = register(fieldKey, {
-    required: required ? 'At least one proof link is required' : false,
+    required: required ? 'At least one supporting document link is required' : false,
     validate: val => {
       const urls = (val || '').split('\n').filter(Boolean)
-      if (!urls.length) return required ? 'At least one proof link is required' : true
+      if (!urls.length) return required ? 'At least one supporting document link is required' : true
       const bad = urls.find(u => !isValidDriveLink(u))
       return bad ? 'All links must be from OneDrive or Google Drive' : true
     },
@@ -148,7 +148,7 @@ function MultiFileInput({ fieldKey, register, required, error }) {
             className={`form-input flex-1 ${error && i === 0 ? 'border-red-400 ring-1 ring-red-200' : ''}`} />
           {links.length > 1 && (
             <button type="button" onClick={() => syncValue(links.filter((_, j) => j !== i))}
-              className="text-red-400 hover:text-red-600 px-2 text-lg leading-none">✕</button>
+              className="text-red-400 hover:text-red-600 px-2 text-lg leading-none"></button>
           )}
         </div>
       ))}

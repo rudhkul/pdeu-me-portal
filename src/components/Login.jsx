@@ -16,7 +16,7 @@ export default function Login() {
 
   useEffect(() => {
     if (sessionStorage.getItem('session_expired')) {
-      toast('Your session expired. Please log in again.', { icon: '⏰' })
+      toast('Your session has expired. Please sign in again.')
       sessionStorage.removeItem('session_expired')
     }
   }, [])
@@ -65,7 +65,7 @@ export default function Login() {
           </div>
 
           {/* Features */}
-          {['20 data sections', 'PDF proof uploads', 'Excel exports & analytics', 'Secure role-based access'].map(f => (
+          {['21 data sections', 'Supporting document management', 'Excel exports and analytics', 'Secure role-based access'].map(f => (
             <div key={f} className="flex items-center gap-2 mb-2">
               <div className="w-1.5 h-1.5 rounded-full bg-white/40" />
               <span className="text-white/50 text-sm">{f}</span>
@@ -76,10 +76,10 @@ export default function Login() {
         {/* Bottom credits */}
         <div>
           <p className="text-white/30 text-xs">
-            Powered by DIC Mechanical · © DIC Mechanical, PDEU
+            Department of Mechanical Engineering · PDEU
           </p>
           <p className="text-white/20 text-xs mt-0.5">
-            Coded by Anirudh Kulkarni, PhD.
+            Portal developed and maintained by Dr Anirudh Kulkarni.
           </p>
         </div>
       </div>
@@ -149,8 +149,8 @@ export default function Login() {
 
         {/* Mobile footer */}
         <p className="lg:hidden mt-6 text-white/30 text-xs text-center">
-          Powered by DIC Mechanical · © DIC Mechanical, PDEU<br />
-          Coded by Anirudh Kulkarni, PhD.
+          Department of Mechanical Engineering · PDEU<br />
+          Portal developed and maintained by Dr Anirudh Kulkarni.
         </p>
       </div>
 

@@ -33,7 +33,7 @@ export default function AdminUsers() {
       // re-read to get new sha
       const { users: u, sha: s } = await getRawUsers()
       setUsers(u); setSha(s)
-      toast.success('Saved!')
+      toast.success('Saved.')
     } catch (e) { toast.error(e.message) }
     finally { setSaving(false) }
   }
@@ -127,7 +127,7 @@ export default function AdminUsers() {
             onChange={e => setNewPwd(p => ({ ...p, [u.id]: e.target.value }))}
             className="form-input text-xs flex-1" />
           <button onClick={() => resetPassword(u.id)} className="btn-secondary text-xs px-3 whitespace-nowrap">
-            Reset Pwd
+            Reset Password
           </button>
         </div>
 
@@ -153,7 +153,7 @@ export default function AdminUsers() {
     <div className="p-6 max-w-5xl mx-auto">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-pdeu-blue">👥 User Management</h1>
+          <h1 className="text-2xl font-bold text-pdeu-blue">User Management</h1>
           <p className="text-gray-500 text-sm mt-1">{faculty.length} faculty · {admins.length} admins</p>
         </div>
         <button onClick={() => setShowAdd(s => !s)} className="btn-primary">
@@ -179,7 +179,7 @@ export default function AdminUsers() {
               <input className="form-input" type="password" value={form.password} onChange={e => setForm(p => ({...p, password: e.target.value}))} /></div>
           </div>
           <button onClick={addUser} disabled={saving} className="btn-primary mt-4">
-            {saving ? '⏳ Saving…' : 'Add User'}
+            {saving ? ' Saving…' : 'Add User'}
           </button>
         </div>
       )}
@@ -191,10 +191,10 @@ export default function AdminUsers() {
         </div>
       ) : (
         <div className="space-y-8">
-          {/* Admins */}
+          {/* Administrators */}
           <div>
             <h2 className="font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
-              🛡️ Admins <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">{admins.length}</span>
+               Administrators <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">{admins.length}</span>
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {admins.map(u => <UserRow key={u.id} u={u} />)}
@@ -204,7 +204,7 @@ export default function AdminUsers() {
           {/* Faculty */}
           <div>
             <h2 className="font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
-              👤 Faculty <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">{faculty.length}</span>
+               Faculty <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">{faculty.length}</span>
             </h2>
             {faculty.length === 0
               ? <p className="text-gray-400 text-sm">No faculty added yet. Use the Add Faculty button above.</p>

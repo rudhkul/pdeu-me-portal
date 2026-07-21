@@ -108,14 +108,13 @@ export default function ResearchMetrics({ session, localPubs = [] }) {
 
   return (
     <div className="card mb-6">
-      <h2 className="font-semibold text-gray-800 dark:text-gray-100 mb-4">📊 Research Metrics</h2>
+      <h2 className="font-semibold text-gray-800 dark:text-gray-100 mb-4">Research Metrics</h2>
 
       {/* ── Live Google Scholar metrics ── */}
       {display && (
         <div className="mb-5">
           <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
             <div className="flex items-center gap-2">
-              <span className="text-base">🎓</span>
               <p className="text-xs font-semibold text-gray-600 dark:text-gray-300">
                 Google Scholar {status === 'ok' ? '— Live' : '— Manual input'}
                 {display.name ? ` · ${display.name}` : ''}
@@ -131,14 +130,13 @@ export default function ResearchMetrics({ session, localPubs = [] }) {
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-2">
             {[
-              { icon: '📈', val: display.citations,     sub: display.citationsSince != null ? `${display.citationsSince} since 2019` : null, lbl: 'Total Citations',  color: 'text-blue-600 dark:text-blue-400' },
-              { icon: '🎯', val: display.hIndex,        sub: display.hIndexSince    != null ? `${display.hIndexSince} since 2019`    : null, lbl: 'h-index',          color: 'text-purple-600 dark:text-purple-400' },
-              { icon: '📊', val: display.i10Index,      sub: display.i10Since       != null ? `${display.i10Since} since 2019`       : null, lbl: 'i10-index',        color: 'text-green-600 dark:text-green-400' },
-              { icon: '📄', val: display.publications,  sub: null,                                                                           lbl: 'Works listed',     color: 'text-amber-600 dark:text-amber-400' },
+              { val: display.citations,     sub: display.citationsSince != null ? `${display.citationsSince} since 2019` : null, lbl: 'Total Citations',  color: 'text-blue-600 dark:text-blue-400' },
+              { val: display.hIndex,        sub: display.hIndexSince    != null ? `${display.hIndexSince} since 2019`    : null, lbl: 'h-index',          color: 'text-purple-600 dark:text-purple-400' },
+              { val: display.i10Index,      sub: display.i10Since       != null ? `${display.i10Since} since 2019`       : null, lbl: 'i10-index',        color: 'text-green-600 dark:text-green-400' },
+              { val: display.publications,  sub: null,                                                                           lbl: 'Works listed',     color: 'text-amber-600 dark:text-amber-400' },
             ].map(m => (
               <div key={m.lbl}
                 className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-xl p-4 text-center">
-                <p className="text-xl mb-1">{m.icon}</p>
                 <p className={`text-2xl font-bold ${m.color}`}>{m.val ?? '—'}</p>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 leading-tight">{m.lbl}</p>
                 {m.sub && <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{m.sub}</p>}
@@ -158,7 +156,7 @@ export default function ResearchMetrics({ session, localPubs = [] }) {
       {/* ── Status messages ── */}
       {!scholarId && (
         <div className="bg-gray-50 dark:bg-gray-700/50 border border-gray-100 dark:border-gray-700 rounded-xl px-4 py-3 mb-5 text-sm text-gray-500 dark:text-gray-400">
-          ℹ️ Add your <strong>Google Scholar ID</strong> in <strong>Tab 1 → Faculty Information</strong> to show live citation metrics.
+           Add your <strong>Google Scholar ID</strong> in <strong>Tab 1 → Faculty Information</strong> to show live citation metrics.
           <div className="mt-1 text-xs">
             Your Scholar ID is the code after <code className="bg-gray-200 dark:bg-gray-600 px-1 rounded">user=</code> in your profile URL:<br/>
             <code className="text-pdeu-blue dark:text-blue-400">scholar.google.com/citations?user=<strong>WoYtYLwAAAAJ</strong></code>
@@ -168,7 +166,7 @@ export default function ResearchMetrics({ session, localPubs = [] }) {
 
       {status === 'notfound' && (
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-xl px-4 py-3 mb-5 text-sm text-red-600 dark:text-red-400">
-          ❌ {errorMsg}
+           {errorMsg}
         </div>
       )}
 
@@ -176,7 +174,7 @@ export default function ResearchMetrics({ session, localPubs = [] }) {
       {status === 'blocked' && (
         <div className="mb-5">
           <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl px-4 py-3 mb-3 text-sm text-amber-700 dark:text-amber-400">
-            ⚠️ Google Scholar is rate-limiting automated requests right now (they do this periodically).
+             Google Scholar is rate-limiting automated requests right now (they do this periodically).
             Enter your metrics manually from your{' '}
             <a href={`https://scholar.google.com/citations?user=${scholarId}`}
               target="_blank" rel="noopener noreferrer"
@@ -213,20 +211,19 @@ export default function ResearchMetrics({ session, localPubs = [] }) {
       {L && L.total > 0 && (
         <>
           <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
-            From your Tab 5 entries
+            Based on Section 5 records
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
             {[
-              { val: L.total,        lbl: 'Total Publications',   icon: '📄' },
-              { val: L.journals,     lbl: 'Journal Papers',       icon: '📰' },
-              { val: L.confs,        lbl: 'Conference Papers',    icon: '🎤' },
+              { val: L.total,        lbl: 'Total Publications' },
+              { val: L.journals,     lbl: 'Journal Papers' },
+              { val: L.confs,        lbl: 'Conference Papers',    icon: '' },
               { val: L.avgIF ?? '—', lbl: 'Avg Impact Factor',   icon: '⭐' },
-              { val: L.openAccess,   lbl: 'Open Access',          icon: '🔓' },
-              { val: L.withStudent,  lbl: 'With Student Authors', icon: '🎓' },
+              { val: L.openAccess,   lbl: 'Open Access' },
+              { val: L.withStudent,  lbl: 'With Student Authors' },
             ].map(m => (
               <div key={m.lbl}
                 className="bg-gray-50 dark:bg-gray-700/50 border border-gray-100 dark:border-gray-700 rounded-xl p-3 text-center">
-                <p className="text-base mb-0.5">{m.icon}</p>
                 <p className="text-xl font-bold text-gray-700 dark:text-gray-200">{m.val}</p>
                 <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 leading-tight">{m.lbl}</p>
               </div>

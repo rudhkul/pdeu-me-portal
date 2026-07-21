@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react'
 import { uploadProof, buildFileName, openProofInBrowser, proofFileNameFromPath } from '../../lib/filestore'
 
 /**
- * PDF proof uploader — stores files in the private GitHub data repo.
+ * PDF supporting document uploader — stores files in the private GitHub data repo.
  * No Azure, no Microsoft sign-in, no popups.
  * Uses the same GitHub PAT that's already in the build.
  *
@@ -38,7 +38,7 @@ export default function ProofUpload({
 
 
   const reg = register(fieldKey, {
-    required: required ? 'Please upload a PDF proof file' : false,
+    required: required ? 'Please upload a PDF supporting document file' : false,
   })
 
   // Preview the auto-generated filename as soon as a file is selected
@@ -126,11 +126,11 @@ export default function ProofUpload({
               }`}
           >
             <div className="w-10 h-10 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center flex-shrink-0 text-xl">
-              📄
+
             </div>
             <div>
               <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">
-                Upload PDF Proof {required && <span className="text-red-500">*</span>}
+                Upload Supporting Document (PDF) {required && <span className="text-red-500">*</span>}
               </p>
               <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                 PDF only · max 10 MB · file will be auto-named and saved securely
@@ -170,7 +170,6 @@ export default function ProofUpload({
         <div className="border border-green-200 dark:border-green-700 bg-green-50 dark:bg-green-900/20 rounded-xl p-4">
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-start gap-2 min-w-0">
-              <span className="text-green-500 text-lg flex-shrink-0 mt-0.5">✅</span>
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-green-700 dark:text-green-400">
                   PDF uploaded successfully
@@ -196,7 +195,7 @@ export default function ProofUpload({
                 }}
                 className="text-xs text-pdeu-blue hover:underline dark:text-blue-400 whitespace-nowrap"
               >
-                View PDF
+                View Document
               </button>
               <button
                 type="button"
@@ -214,7 +213,6 @@ export default function ProofUpload({
       {status === 'error' && (
         <div className="border border-red-200 dark:border-red-700 bg-red-50 dark:bg-red-900/20 rounded-xl p-3">
           <div className="flex items-start gap-2">
-            <span className="text-red-500 flex-shrink-0">❌</span>
             <div>
               <p className="text-sm font-semibold text-red-700 dark:text-red-400">Upload failed</p>
               <p className="text-xs text-red-600 dark:text-red-400 mt-0.5">{errMsg}</p>
