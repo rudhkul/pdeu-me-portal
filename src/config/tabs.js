@@ -48,7 +48,7 @@ export const SDG_LIST = [
   { num: 17, label: 'Partnerships for the Goals' },
 ]
 
-export const ACADEMIC_YEARS = ['2024-25','2023-24','2022-23','2021-22','2020-21','2019-20']
+export const ACADEMIC_YEARS = ['2026-27','2025-26','2024-25','2023-24','2022-23','2021-22','2020-21','2019-20']
 
 export const TABS = [
   {
@@ -176,11 +176,11 @@ export const TABS = [
       { key: 'coauthor_affiliations',  label: 'Co-author Affiliations (by ";")',        type: 'textarea' },
       { key: 'collaboration_institutes', label: 'Collaboration Institutes / Industry', type: 'textarea' },
       { key: 'btech_coauthor',         label: 'B.Tech Student as Co-author?',          type: 'select', options: ['Yes', 'No'] },
-      { key: 'btech_roll_numbers',     label: 'B.Tech Roll Numbers',                   type: 'text', conditionalOn: { key: 'btech_coauthor', value: 'Yes' } },
+      { key: 'btech_roll_numbers',     label: 'B.Tech Roll Numbers (separate multiple roll numbers with commas)',                   type: 'text', conditionalOn: { key: 'btech_coauthor', value: 'Yes' } },
       { key: 'mtech_coauthor',         label: 'M.Tech Student as Co-author?',          type: 'select', options: ['Yes', 'No'] },
-      { key: 'mtech_roll_numbers',     label: 'M.Tech Roll Numbers',                   type: 'text', conditionalOn: { key: 'mtech_coauthor', value: 'Yes' } },
+      { key: 'mtech_roll_numbers',     label: 'M.Tech Roll Numbers (separate multiple roll numbers with commas)',                   type: 'text', conditionalOn: { key: 'mtech_coauthor', value: 'Yes' } },
       { key: 'phd_coauthor',           label: 'PhD Student as Co-author?',             type: 'select', options: ['Yes', 'No'] },
-      { key: 'phd_roll_numbers',       label: 'PhD Roll Numbers',                      type: 'text', conditionalOn: { key: 'phd_coauthor', value: 'Yes' } },
+      { key: 'phd_roll_numbers',       label: 'PhD Roll Numbers (separate multiple roll numbers with commas)',                      type: 'text', conditionalOn: { key: 'phd_coauthor', value: 'Yes' } },
       { key: 'journal_or_conf_name',   label: 'Journal / Conference / Book Name',      type: 'text', required: true },
       { key: 'impact_factor',          label: 'Impact Factor of Journal',              type: 'number' },
       { key: 'volume_no',              label: 'Volume No.',                             type: 'text' },
@@ -270,7 +270,8 @@ export const TABS = [
   {
     id: 'tab9', number: 9, name: 'Talks, Workshops, STTP & FDP',
     table: 'tab9_talks_workshops', icon: '🎤',
-    description: 'Expert talks, workshops, STTPs, FDPs organised by the faculty.',
+    emphasis: 'ORGANISED BY YOU:',
+    description: 'Enter only expert talks, workshops, STTPs, FDPs and similar events that you organised or coordinated.',
     fields: [
       { key: 'event_name',          label: 'Name / Topic of Event',                   type: 'text',   required: true },
       { key: 'event_type',          label: 'Type of Event',                            type: 'select', options: ['Expert Talk', 'Workshop', 'STTP', 'FDP', 'Webinar', 'Seminar', 'Other'], required: true },
@@ -357,7 +358,8 @@ export const TABS = [
   {
     id: 'tab14', number: 14, name: 'Faculty Training & Collaboration',
     table: 'tab14_training', icon: '🏭',
-    description: 'Industry internships, training programs, and research collaborations.',
+    emphasis: 'ATTENDED / PARTICIPATED:',
+    description: 'Enter FDPs, training programmes, internships or collaborations that you attended or participated in.',
     fields: [
       { key: 'training_name',    label: 'Name of Internship / Training / Collaboration', type: 'text',   required: true },
       { key: 'activity_type',    label: 'Activity Type',                                  type: 'select', options: ['Industry Internship', 'Research Collaboration', 'Training Program', 'FDP', 'Other'], required: true },
@@ -376,7 +378,8 @@ export const TABS = [
   {
     id: 'tab15', number: 15, name: 'Faculty as Resource Persons',
     table: 'tab15_resource_persons', icon: '🎙️',
-    description: 'Faculty invited as resource persons for STTP / FDP / Expert Talks elsewhere.',
+    emphasis: 'DELIVERED BY YOU:',
+    description: 'Enter sessions that you delivered as an invited resource person for an STTP, FDP, expert talk or similar event.',
     fields: [
       { key: 'event_name',    label: 'Name of STTP / FDP / Expert Talk',               type: 'text',   required: true },
       { key: 'academic_year', label: 'Academic Year',                                   type: 'select', options: ACADEMIC_YEARS,   required: true },

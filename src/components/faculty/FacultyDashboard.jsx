@@ -208,7 +208,14 @@ export default function FacultyDashboard() {
                   <p className="font-semibold text-gray-800 dark:text-gray-100 text-sm group-hover:text-pdeu-blue leading-tight">
                     {tab.number}. {tab.name}
                   </p>
-                  <p className="text-xs text-gray-400 mt-1 line-clamp-2">{tab.description}</p>
+                  <p className="text-xs text-gray-400 mt-1 line-clamp-2">
+                    {tab.emphasis && (
+                      <strong className="text-gray-600 dark:text-gray-300">
+                        {tab.emphasis}{' '}
+                      </strong>
+                    )}
+                    {tab.description}
+                  </p>
                 </div>
               </div>
               <div className="mt-3 flex items-center justify-between">

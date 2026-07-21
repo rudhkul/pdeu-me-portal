@@ -214,6 +214,13 @@ export default function TabForm() {
         )}
       </div>
 
+      {tab.emphasis && (
+        <div className="mb-5 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 px-4 py-3 text-sm text-blue-800 dark:text-blue-200">
+          <strong>{tab.emphasis}</strong>{' '}
+          {tab.description}
+        </div>
+      )}
+
       {saving && (
         <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg px-4 py-3 mb-4 text-sm text-blue-700 dark:text-blue-300 flex items-center gap-2">
           <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
