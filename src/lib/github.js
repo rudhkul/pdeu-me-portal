@@ -123,7 +123,11 @@ export async function getAllRecordsForTab(tabId) {
   const jsons = files.filter(f => f.name.endsWith('.json'))
   if (!jsons.length) return []
   const chunks = await Promise.all(
-    jsons.map(f => readJSON(`records/${tabId}/${f.name}`).then(r => r.data || []))
+    jsons.map(async file => {
+      const userId = file.name.replace(/\.json$/i, '')
+      const { data } = await readJSON(`records/${tabId}/${file.name}`)
+      return (data || []).map(record => ({ ...record, _userId: userId }))
+    })
   )
   return chunks.flat()
 }
