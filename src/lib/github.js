@@ -146,9 +146,15 @@ export async function addRecord(tabId, userId, newRecord) {
 export async function updateRecord(tabId, userId, recordId, changes) {
   const path          = `records/${tabId}/${userId}.json`
   const { data, sha } = await readJSON(path)
+  const existing      = (data || []).find(r => r.id === recordId)
+  if (!existing) throw new Error('Record not found.')
+
+  const changedFields = getChangedFields(existing, changes)
+  if (changedFields.length === 0) return data || []
+
   const updated       = (data || []).map(r =>
     r.id === recordId
-      ? { ...r, ...changes, updatedAt: new Date().toISOString(), _changedFields: getChangedFields(r, changes) }
+      ? { ...r, ...changes, updatedAt: new Date().toISOString(), _changedFields: changedFields }
       : r
   )
   await writeJSON(path, updated, sha)
