@@ -46,7 +46,9 @@ export default function TabForm() {
   const [search,   setSearch]   = useState('')
 
   const { register, handleSubmit, reset, watch, setValue,
-          formState: { errors, isDirty: formDirty } } = useForm()
+          formState: { errors, isDirty: formDirty } } = useForm({
+    shouldUnregister: true,
+  })
 
   useEffect(() => { setIsDirty(formDirty) }, [formDirty])
 

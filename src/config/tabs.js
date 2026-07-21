@@ -430,19 +430,33 @@ export const TABS = [
   },
 
   {
-    id: 'tab18', number: 18, name: 'Placement Data',
-    table: 'tab18_placement', icon: '🏢',
-    description: 'B.Tech student placement details.',
+    id: 'tab18', number: 18, name: 'Student Progression',
+    table: 'tab18_placement', icon: '🎓',
+    description: 'Placement, higher studies, startup/business and other student outcomes.',
     fields: [
-      { key: 'roll_no',        label: 'Roll No.',                                       type: 'text',   required: true },
+      { key: 'roll_no',        label: 'PDEU Roll No.',                                  type: 'text',   required: true },
       { key: 'student_name',   label: 'Student Name',                                   type: 'text',   required: true },
-      { key: 'academic_year',  label: 'Academic Year (Batch)',                           type: 'select', options: ACADEMIC_YEARS,   required: true },
+      { key: 'academic_year',  label: 'Academic Year of Graduation',                    type: 'select', options: ACADEMIC_YEARS, required: true },
       { key: 'branch',         label: 'Branch',                                          type: 'text',   required: true },
       { key: 'cpi',            label: 'CPI',                                             type: 'number' },
-      { key: 'placement_type', label: 'Placement Type',                                  type: 'select', options: ['Placed via Campus', 'Placed Independently', 'Own Business', 'Higher Studies', 'Other'], required: true },
-      { key: 'company_name',   label: 'Company Name',                                    type: 'text' },
-      { key: 'ctc',            label: 'CTC (LPA)',                                        type: 'number' },
-      { key: 'proof_link',     label: 'Proof / Company Email Link',                      type: 'file' },
+      { key: 'placement_type', label: 'Student Outcome',                                 type: 'select', options: ['Placed via Campus', 'Placed Independently', 'Higher Studies', 'Startup / Own Business', 'Own Business', 'Other'], required: true },
+
+      { key: 'company_name',   label: 'Company Name',                                   type: 'text',   required: true, conditionalOn: { key: 'placement_type', values: ['Placed via Campus', 'Placed Independently'] } },
+      { key: 'ctc',            label: 'CTC (LPA)',                                       type: 'number', required: true, conditionalOn: { key: 'placement_type', values: ['Placed via Campus', 'Placed Independently'] } },
+
+      { key: 'higher_studies_course',         label: 'Course / Degree',                  type: 'text',   required: true, conditionalOn: { key: 'placement_type', value: 'Higher Studies' } },
+      { key: 'higher_studies_specialization', label: 'Specialization',                   type: 'text',   required: true, conditionalOn: { key: 'placement_type', value: 'Higher Studies' } },
+      { key: 'higher_studies_admission_year', label: 'Year of Admission',                type: 'text',   required: true, conditionalOn: { key: 'placement_type', value: 'Higher Studies' } },
+      { key: 'higher_studies_institution',    label: 'Institution / University',         type: 'text',   required: true, conditionalOn: { key: 'placement_type', value: 'Higher Studies' } },
+      { key: 'higher_studies_country',        label: 'Country',                          type: 'text',   required: true, conditionalOn: { key: 'placement_type', value: 'Higher Studies' } },
+
+      { key: 'business_name',       label: 'Startup / Business Name',                    type: 'text',   required: true, conditionalOn: { key: 'placement_type', values: ['Startup / Own Business', 'Own Business'] } },
+      { key: 'business_sector',     label: 'Nature / Sector of Business',                type: 'text',   required: true, conditionalOn: { key: 'placement_type', values: ['Startup / Own Business', 'Own Business'] } },
+      { key: 'business_start_year', label: 'Year Started',                               type: 'text',   required: true, conditionalOn: { key: 'placement_type', values: ['Startup / Own Business', 'Own Business'] } },
+      { key: 'business_location',   label: 'Business Location',                          type: 'text',   required: true, conditionalOn: { key: 'placement_type', values: ['Startup / Own Business', 'Own Business'] } },
+
+      { key: 'other_outcome_details', label: 'Other Outcome Details',                    type: 'textarea', required: true, conditionalOn: { key: 'placement_type', value: 'Other' } },
+      { key: 'proof_link',            label: 'Supporting Document / Email Link',         type: 'file',   required: true },
     ],
   },
 
@@ -479,6 +493,22 @@ export const TABS = [
       ...SDG,
     ],
   },
+
+  {
+    id: 'tab21', number: 21, name: 'Competitive Examinations',
+    table: 'tab21_competitive_examinations', icon: '🏅',
+    description: 'Competitive examinations appeared in or qualified by students.',
+    fields: [
+      { key: 'student_name',             label: 'Student Name',                         type: 'text',   required: true },
+      { key: 'roll_no',                  label: 'PDEU Roll No.',                        type: 'text',   required: true },
+      { key: 'examination_name',         label: 'Competitive Examination Name',         type: 'select', options: ['NET', 'SLET', 'GATE', 'GMAT', 'CAT', 'GRE', 'JAM', 'IELTS', 'TOEFL', 'Civil Services', 'State Government Examination', 'Other Examination'], required: true },
+      { key: 'other_examination_name',   label: 'Specify Other Examination',            type: 'text',   required: true, conditionalOn: { key: 'examination_name', value: 'Other Examination' } },
+      { key: 'registration_number',      label: 'Registration Number',                  type: 'text',   required: true },
+      { key: 'examination_month',        label: 'Month and Year of Examination',        type: 'month',  required: true },
+      { key: 'qualified',                label: 'Passed / Qualified?',                   type: 'select', options: ['Yes', 'No'], required: true },
+      { key: 'score',                    label: 'Score / Percentile / Rank',             type: 'text',   required: true },
+    ],
+  },
 ]
 
 export const ADMIN_TAB_MAP = {
@@ -487,6 +517,7 @@ export const ADMIN_TAB_MAP = {
   tab9: 'Abhinaya', tab10: 'Abhinaya',   tab11: 'Vivek Jaiswal', tab12: 'Vivek Jaiswal',
   tab13: 'Krunal', tab14: 'Abhinaya',    tab15: 'Abhinaya',     tab16: 'Salman',
   tab17: 'Vivek Jaiswal', tab18: 'Krunal', tab19: 'Anirudh',   tab20: 'Anirudh',
+  tab21: 'Krunal',
 }
 
 export const ADMINS        = ['Salman', 'Krunal', 'Vivek Jaiswal', 'Anirudh', 'Abhinaya']
