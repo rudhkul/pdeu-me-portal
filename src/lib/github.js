@@ -11,11 +11,14 @@ async function ghFetch(path, options = {}) {
     throw new Error('Portal is not configured: VITE_WORKER_URL is missing.')
   }
 
+  const token = getToken()
+  if (!token) throw new Error('Your session has expired. Log in again.')
   try {
     const res = await fetch(`${API}/${path}`, {
       ...options,
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
         ...(options.headers || {}),
       },
     })
@@ -69,15 +72,8 @@ export async function readJSON(path) {
 
 export async function writeJSON(path, data, sha = null) {
   const content = btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2))))
-  const token   = getToken()
-  const headers = {}
-
-  // Kept only for backward compatibility with older workers that still inspect this header.
-  if (token) headers['X-Session-Token'] = token
-
   const res = await ghFetch(path, {
     method:  'PUT',
-    headers,
     body:    JSON.stringify({ message: `portal: update ${path}`, content, ...(sha ? { sha } : {}) }),
   })
   if (!res.ok) handleError(res.status, path, await parseErrorBody(res))
@@ -127,7 +123,11 @@ export async function getAllRecordsForTab(tabId) {
   const jsons = files.filter(f => f.name.endsWith('.json'))
   if (!jsons.length) return []
   const chunks = await Promise.all(
-    jsons.map(f => readJSON(`records/${tabId}/${f.name}`).then(r => r.data || []))
+    jsons.map(async file => {
+      const userId = file.name.replace(/\.json$/i, '')
+      const { data } = await readJSON(`records/${tabId}/${file.name}`)
+      return (data || []).map(record => ({ ...record, _userId: userId }))
+    })
   )
   return chunks.flat()
 }
@@ -150,9 +150,15 @@ export async function addRecord(tabId, userId, newRecord) {
 export async function updateRecord(tabId, userId, recordId, changes) {
   const path          = `records/${tabId}/${userId}.json`
   const { data, sha } = await readJSON(path)
+  const existing      = (data || []).find(r => r.id === recordId)
+  if (!existing) throw new Error('Record not found.')
+
+  const changedFields = getChangedFields(existing, changes)
+  if (changedFields.length === 0) return data || []
+
   const updated       = (data || []).map(r =>
     r.id === recordId
-      ? { ...r, ...changes, updatedAt: new Date().toISOString(), _changedFields: getChangedFields(r, changes) }
+      ? { ...r, ...changes, updatedAt: new Date().toISOString(), _changedFields: changedFields }
       : r
   )
   await writeJSON(path, updated, sha)

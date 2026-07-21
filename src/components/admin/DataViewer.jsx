@@ -120,8 +120,9 @@ export default function DataViewer() {
   }
 
   function startEdit(row) {
-    const faculty = faculties.find(f => f.fullName === row.facultyName)
-    setEditingRow({ row, userId: faculty?.id })
+    const userId = row._userId ||
+      faculties.find(f => f.fullName === row.facultyName)?.id
+    setEditingRow({ row, userId })
     reset(row); setExpandedRow(null)
   }
 
@@ -138,20 +139,22 @@ export default function DataViewer() {
 
   async function handleDelete(row) {
     if (!confirm(`Delete this record by ${row.facultyName}? Cannot be undone.`)) return
-    const faculty = faculties.find(f => f.fullName === row.facultyName)
-    if (!faculty) { toast.error('Cannot identify faculty owner'); return }
+    const userId = row._userId ||
+      faculties.find(f => f.fullName === row.facultyName)?.id
+    if (!userId) { toast.error('Cannot identify faculty owner'); return }
     try {
-      await adminDeleteRecord(tab.id, faculty.id, row.id)
+      await adminDeleteRecord(tab.id, userId, row.id)
       setRows(prev => prev.filter(r => r.id !== row.id))
       toast.success('Deleted')
     } catch (e) { toast.error(e.message) }
   }
 
   async function handleVerify(row, verified) {
-    const faculty = faculties.find(f => f.fullName === row.facultyName)
-    if (!faculty) { toast.error('Cannot identify faculty owner'); return }
+    const userId = row._userId ||
+      faculties.find(f => f.fullName === row.facultyName)?.id
+    if (!userId) { toast.error('Cannot identify faculty owner'); return }
     try {
-      await toggleVerified(tab.id, faculty.id, row.id, verified)
+      await toggleVerified(tab.id, userId, row.id, verified)
       setRows(prev => prev.map(r => r.id === row.id ? { ...r, _verified: verified } : r))
       toast.success(verified ? '✅ Marked as verified' : 'Marked as unverified')
     } catch (e) { toast.error(e.message) }

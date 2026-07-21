@@ -20,7 +20,6 @@ function validateRow(row) {
   const link = row.drive_link || ''
   if (!link)              return 'Missing proof link'
   if (!isValidDriveLink(link)) return 'Invalid proof link (must be OneDrive or Google Drive)'
-  if (!row.report_name)   return 'Missing report name'
   return null   // valid
 }
 
@@ -94,7 +93,7 @@ export default function CSVImport({ tab, onImport, disabled }) {
                 Pre-formatted CSV with all column headers. Fill it in Excel or Google Sheets.
                 <br />
                 <span className="text-amber-600 dark:text-amber-400 font-medium">
-                  ⚠️ Every row must have a valid OneDrive or Google Drive proof link and a report name.
+                  ⚠️ Every row must have a valid OneDrive or Google Drive proof link.
                 </span>
               </p>
             </div>
@@ -120,7 +119,7 @@ export default function CSVImport({ tab, onImport, disabled }) {
               </p>
             </div>
             <div>
-              <input ref={fileRef} type="file" accept=".csv,text/csv"
+              <input ref={fileRef} type="file" accept=".csv,.xls,text/csv,application/vnd.ms-excel"
                 onChange={handleFile} className="hidden" id="csv-upload-input" />
               <label htmlFor="csv-upload-input"
                 className="btn-primary text-sm cursor-pointer flex items-center gap-2 whitespace-nowrap">
@@ -161,7 +160,7 @@ export default function CSVImport({ tab, onImport, disabled }) {
                 </span>
                 {hasInvalid && (
                   <span className="text-xs bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 px-3 py-1 rounded-full font-medium">
-                    ❌ {invalidRows.length} row{invalidRows.length !== 1 ? 's' : ''} rejected — missing/invalid proof link
+                    ❌ {invalidRows.length} row{invalidRows.length !== 1 ? 's' : ''} rejected — see details below
                   </span>
                 )}
               </div>

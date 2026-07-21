@@ -1,40 +1,35 @@
-import { sha256 } from 'js-sha256'
-import { readJSON } from './github'
-
-const SECRET      = import.meta.env.VITE_AUTH_SECRET || 'fallback-secret'
+const WORKER = (import.meta.env.VITE_WORKER_URL || '').trim().replace(/\/+$/, '')
 const SESSION_KEY = 'pdeu_session'
-const SESSION_TTL = 8 * 60 * 60 * 1000
 
-export function hashPassword(password, salt) {
-  return sha256(SECRET + salt + password)
+async function authRequest(path, options = {}) {
+  if (!WORKER) throw new Error('Portal authentication is not configured.')
+  let response
+  try {
+    response = await fetch(`${WORKER}${path}`, {
+      ...options,
+      headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+    })
+  } catch {
+    throw new Error('Cannot reach the authentication service.')
+  }
+  const body = await response.json().catch(() => ({}))
+  if (!response.ok) throw new Error(body.error || `Authentication failed (${response.status}).`)
+  return body
 }
 
 export async function login(email, password) {
-  let users
-  try {
-    const res = await readJSON('users.json')
-    users = res.data
-  } catch (e) {
-    if (e.message?.includes('401') || e.message?.includes('Bad credentials'))
-      throw new Error('Authentication token has expired. Contact the administrator.')
-    throw new Error('Cannot reach data repository. Check your connection and try again.')
-  }
-
-  if (!users?.length)
-    throw new Error('No users found. Please run the init-repo script first.')
-
-  const user = users.find(u => u.email.toLowerCase() === email.trim().toLowerCase())
-  if (!user) throw new Error('No account found with that email address.')
-
-  if (hashPassword(password, user.salt) !== user.passwordHash)
-    throw new Error('Incorrect password.')
-
+  const result = await authRequest('/api/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ email, password }),
+  })
   const session = {
-    userId:    user.id,
-    email:     user.email,
-    role:      user.role,
-    fullName:  user.fullName,
+    userId: result.userId,
+    email: result.email,
+    role: result.role,
+    fullName: result.fullName,
+    token: result.token,
     loginTime: Date.now(),
+    exp: result.exp,
   }
   localStorage.setItem(SESSION_KEY, JSON.stringify(session))
   return session
@@ -42,16 +37,54 @@ export async function login(email, password) {
 
 export function getSession() {
   try {
-    const s = localStorage.getItem(SESSION_KEY)
-    if (!s) return null
-    const session = JSON.parse(s)
-    if (Date.now() - session.loginTime > SESSION_TTL) {
+    const raw = localStorage.getItem(SESSION_KEY)
+    if (!raw) return null
+    const session = JSON.parse(raw)
+    if (!session.token || !session.exp || Date.now() >= session.exp) {
       localStorage.removeItem(SESSION_KEY)
       return null
     }
     return session
-  } catch { return null }
+  } catch {
+    localStorage.removeItem(SESSION_KEY)
+    return null
+  }
 }
 
-export function getToken() { return getSession()?.token || null }
-export function logout()   { localStorage.removeItem(SESSION_KEY) }
+export function getToken() {
+  return getSession()?.token || null
+}
+
+export async function changePassword(currentPassword, newPassword) {
+  const token = getToken()
+  if (!token) throw new Error('Your session has expired. Log in again.')
+  return authRequest('/api/auth/change-password', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ currentPassword, newPassword }),
+  })
+}
+
+export async function adminCreateUser(user) {
+  const token = getToken()
+  if (!token) throw new Error('Your session has expired. Log in again.')
+  return authRequest('/api/admin/users', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify(user),
+  })
+}
+
+export async function adminResetPassword(userId, newPassword) {
+  const token = getToken()
+  if (!token) throw new Error('Your session has expired. Log in again.')
+  return authRequest(`/api/admin/users/${encodeURIComponent(userId)}/password`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ newPassword }),
+  })
+}
+
+export function logout() {
+  localStorage.removeItem(SESSION_KEY)
+}

@@ -11,17 +11,18 @@ const SKIP_TYPES = [
 
 // Individual keys always excluded from CSV
 const SKIP_KEYS = [
-  'drive_link',   // auto-set by proof upload
   'report_name',  // auto-generated from uploaded filename
 ]
+
+const isCSVField = field => field.key === 'drive_link' || (
+  !SKIP_TYPES.includes(field.type) && !SKIP_KEYS.includes(field.key)
+)
 
 /**
  * Generate and download a CSV template for a tab.
  */
 export function downloadTemplate(tab) {
-  const fields = tab.fields.filter(f =>
-    !SKIP_TYPES.includes(f.type) && !SKIP_KEYS.includes(f.key)
-  )
+  const fields = tab.fields.filter(isCSVField)
 
   const headers = fields.map(f => f.label)
   const hints   = fields.map(f => {
@@ -73,22 +74,35 @@ export function parseCSV(text, tab) {
     return result
   }
 
-  const headerRow = parseLine(lines[0]).map(h => h.replace(/^"|"$/g, '').trim())
+  const headerRow = parseLine(lines[0]).map(h =>
+    h.replace(/^"|"$/g, '').replace(/^\uFEFF/, '').trim()
+  )
 
-  // label → field key (case-insensitive, also support field keys directly)
-  // Exclude proof/upload fields — they're not in the template
-  const SKIP_TYPES_PARSE = ['boolean','sdg_multi','proof_upload','profile_picture_upload','faculty_select']
-  const SKIP_KEYS_PARSE  = ['drive_link','report_name']
+  const normalizeHeader = value => String(value || '')
+    .toLowerCase()
+    .replace(/\([^)]*[₹?][^)]*\)/g, '')
+    .replace(/[–—]/g, '-')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+
   const labelToKey = {}
   tab.fields
-    .filter(f => !SKIP_TYPES_PARSE.includes(f.type) && !SKIP_KEYS_PARSE.includes(f.key))
+    .filter(isCSVField)
     .forEach(f => {
-      labelToKey[f.label.toLowerCase()] = f.key
-      labelToKey[f.key.toLowerCase()]   = f.key
+      labelToKey[normalizeHeader(f.label)] = f.key
+      labelToKey[normalizeHeader(f.key)] = f.key
     })
 
-  const colMap  = headerRow.map(h => labelToKey[h.toLowerCase()] || null)
-  const unknown = headerRow.filter(h => !labelToKey[h.toLowerCase()] && !h.startsWith('NOTE'))
+  labelToKey[normalizeHeader('Drive Link')] = 'drive_link'
+  labelToKey[normalizeHeader('OneDrive / Drive Link')] = 'drive_link'
+  labelToKey[normalizeHeader('Proof Link')] = 'drive_link'
+
+  const colMap = headerRow.map(h =>
+    labelToKey[normalizeHeader(h)] || null
+  )
+  const unknown = headerRow.filter(h =>
+    !labelToKey[normalizeHeader(h)] && !h.startsWith('NOTE')
+  )
   const errors  = unknown.length ? [`Unknown columns (ignored): ${unknown.join(', ')}`] : []
 
   const records = []
@@ -99,7 +113,16 @@ export function parseCSV(text, tab) {
     let   hasData = false
     colMap.forEach((key, ci) => {
       if (!key) return
-      const val = cells[ci] ?? ''
+      let val = cells[ci] ?? ''
+      const field = tab.fields.find(item => item.key === key)
+      const dateMatch =
+        field?.type === 'date' &&
+        val.match(/^(\d{2})-(\d{2})-(\d{4})$/)
+
+      if (dateMatch) {
+        val = dateMatch[3] + '-' + dateMatch[2] + '-' + dateMatch[1]
+      }
+
       if (val !== '') { row[key] = val; hasData = true }
     })
     if (hasData) records.push(row)

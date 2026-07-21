@@ -1,18 +1,7 @@
-import { hashPassword } from '../../lib/auth'
+import { adminCreateUser, adminResetPassword } from '../../lib/auth'
 import { useEffect, useState } from 'react'
 import { getRawUsers, saveRawUsers } from '../../lib/github'
 import toast from 'react-hot-toast'
-
-function randomId() {
-  const arr = new Uint8Array(4)
-  window.crypto.getRandomValues(arr)
-  return 'usr_' + Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('')
-}
-function randomSalt() {
-  const arr = new Uint8Array(16)
-  window.crypto.getRandomValues(arr)
-  return Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('')
-}
 
 export default function AdminUsers() {
   const [users,    setUsers]    = useState([])
@@ -54,14 +43,18 @@ export default function AdminUsers() {
     if (users.find(u => u.email.toLowerCase() === form.email.toLowerCase())) {
       toast.error('Email already exists'); return
     }
-    const salt = randomSalt()
-    const newUser = {
-      id: randomId(), fullName: form.fullName, email: form.email,
-      role: form.role, salt, passwordHash: hashPassword(form.password, salt),
+    setSaving(true)
+    try {
+      await adminCreateUser(form)
+      await load()
+      setShowAdd(false)
+      setForm({ fullName: '', email: '', role: 'faculty', password: '' })
+      toast.success('User added!')
+    } catch (e) {
+      toast.error(e.message)
+    } finally {
+      setSaving(false)
     }
-    await persist([...users, newUser])
-    setShowAdd(false)
-    setForm({ fullName: '', email: '', role: 'faculty', password: '' })
   }
 
   async function saveEdit(id) {
@@ -73,14 +66,15 @@ export default function AdminUsers() {
 
   async function resetPassword(id) {
     const pwd = newPwd[id]
-    if (!pwd || pwd.length < 6) { toast.error('Password must be at least 6 characters'); return }
+    if (!pwd || pwd.length < 8) { toast.error('Password must be at least 8 characters'); return }
     const user = users.find(u => u.id === id)
-    const updated = users.map(u =>
-      u.id === id ? { ...u, passwordHash: hashPassword(pwd, u.salt) } : u
-    )
-    await persist(updated)
-    setNewPwd(p => ({ ...p, [id]: '' }))
-    toast.success(`Password reset for ${user.fullName}`)
+    setSaving(true)
+    try {
+      await adminResetPassword(id, pwd)
+      setNewPwd(p => ({ ...p, [id]: '' }))
+      toast.success(`Password reset for ${user.fullName}`)
+    } catch (e) { toast.error(e.message) }
+    finally { setSaving(false) }
   }
 
   async function removeUser(id) {
