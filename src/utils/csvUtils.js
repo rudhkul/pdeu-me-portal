@@ -14,7 +14,7 @@ const SKIP_KEYS = [
   'report_name',  // auto-generated from uploaded filename
 ]
 
-const isCSVField = field => field.key === 'drive_link' || (
+const isCSVField = field => (
   !SKIP_TYPES.includes(field.type) && !SKIP_KEYS.includes(field.key)
 )
 
@@ -94,9 +94,6 @@ export function parseCSV(text, tab) {
       labelToKey[normalizeHeader(f.key)] = f.key
     })
 
-  labelToKey[normalizeHeader('Drive Link')] = 'drive_link'
-  labelToKey[normalizeHeader('OneDrive / Drive Link')] = 'drive_link'
-  labelToKey[normalizeHeader('Supporting Document Link')] = 'drive_link'
 
   const colMap = headerRow.map(h =>
     labelToKey[normalizeHeader(h)] || null

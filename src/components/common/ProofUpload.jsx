@@ -60,9 +60,9 @@ export default function ProofUpload({
     }
 
     // Validate size
-    if (file.size > 10 * 1024 * 1024) {
+    if (file.size > 2 * 1024 * 1024) {
       setStatus('error')
-      setErrMsg(`File too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum is 10 MB.`)
+      setErrMsg(`File too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum is 2 MB. Compress the PDF before uploading.`)
       return
     }
 

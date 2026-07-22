@@ -11,12 +11,12 @@ function OnboardingBanner({ filledTabs, onDismiss }) {
       <div className="flex-1 min-w-0">
         <p className="font-semibold text-pdeu-blue dark:text-blue-300">Welcome to the DIC Mechanical Data Portal!</p>
         <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-          Please fill in your data across all 20 sections. Here's how to get started:
+          Please enter the applicable data across all 21 sections. Follow these steps:
         </p>
         <ol className="text-sm text-gray-600 dark:text-gray-400 mt-2 space-y-1 list-decimal list-inside">
           <li>Start with <strong className="text-gray-700 dark:text-gray-300">Tab 1 — Faculty Information</strong> (your profile)</li>
           <li>Complete each applicable section and submit the relevant records</li>
-          <li>For file attachments, upload to OneDrive and paste the sharing link</li>
+          <li>Upload the required supporting PDFs directly in each applicable section</li>
           <li>You can save, edit, and come back anytime — progress is always saved</li>
         </ol>
       </div>

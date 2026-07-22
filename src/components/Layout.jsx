@@ -337,7 +337,7 @@ export default function Layout({ children }) {
             <HamburgerIcon open />
           </button>
         </div>
-        <SidebarContent />
+        {SidebarContent()}
       </aside>
 
       <aside className={`
@@ -347,7 +347,9 @@ export default function Layout({ children }) {
         ${open ? 'w-64' : 'w-16'}
       `}>
         <div className="flex items-center gap-3 px-3 py-4 border-b border-gray-100 dark:border-gray-700 min-h-[64px]">
-          <img src={ICON} alt="DIC Mechanical" className="h-10 w-auto flex-shrink-0 dark:brightness-0 dark:invert" />
+          {open && (
+            <img src={ICON} alt="DIC Mechanical" className="h-10 w-auto flex-shrink-0 dark:brightness-0 dark:invert" />
+          )}
           {open && (
             <div className="min-w-0 flex-1">
               <p className="font-bold text-[#003087] dark:text-white text-sm truncate leading-tight">DIC Mechanical</p>
@@ -357,14 +359,15 @@ export default function Layout({ children }) {
           <button
             onClick={toggleSidebar}
             title={open ? 'Collapse sidebar' : 'Expand sidebar'}
-            className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-lg
+            className={`flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-lg
                        text-gray-400 hover:text-pdeu-blue hover:bg-pdeu-light
-                       dark:hover:bg-gray-700 transition-colors ml-auto"
+                       dark:hover:bg-gray-700 transition-colors
+                       ${open ? 'ml-auto' : 'mx-auto'}`}
           >
             <HamburgerIcon open={open} />
           </button>
         </div>
-        <SidebarContent />
+        {SidebarContent()}
       </aside>
 
       <div className="flex-1 flex flex-col overflow-hidden">

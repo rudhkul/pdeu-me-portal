@@ -14,7 +14,8 @@ const REPORT_NAME_HINT = 'Format: {Sr.No}_{Tab Name}_{Your Name} e.g. 5_Publicat
 // Tabs with proof required (proof is meaningful for these)
 export const PROOF_REQUIRED_TABS = [
   'tab2','tab4','tab5','tab6','tab7','tab8','tab9',
-  'tab10','tab11','tab12','tab13','tab14','tab15','tab16','tab19','tab20'
+  'tab10','tab11','tab12','tab13','tab14','tab15','tab16','tab17','tab18',
+  'tab19','tab20','tab21'
 ]
 
 const PROOF = [
@@ -70,13 +71,13 @@ export const TABS = [
       { key: 'i10_index',                   label: 'i10-index',                                   type: 'number' },
       { key: 'area_of_specialization',      label: 'Area of Specialization',                    type: 'textarea', required: true },
       { key: 'is_phd_guide',               label: 'Recognised as PhD Research Guide?',          type: 'select', options: ['Yes', 'No'], required: true },
-      { key: 'year_phd_guide_recognition',  label: 'Year of Recognition as Research Guide',     type: 'text',   conditionalOn: { key: 'is_phd_guide', value: 'Yes' } },
+      { key: 'year_phd_guide_recognition',  label: 'Year of Recognition as Research Guide',     type: 'number', required: true, conditionalOn: { key: 'is_phd_guide', value: 'Yes' } },
       { key: 'highest_degree',             label: 'Highest Degree',                             type: 'select', options: ['PhD', 'Post-Doc', 'D.Sc.', 'Other'], required: true },
-      { key: 'highest_degree_month_year',  label: 'Month & Year of Passing Highest Degree',     type: 'text',   required: true },
+      { key: 'highest_degree_month_year',  label: 'Month & Year of Passing Highest Degree',     type: 'month',   required: true },
       { key: 'highest_degree_specialization', label: 'Specialization of Highest Degree',        type: 'text',   required: true },
       { key: 'highest_degree_university',  label: 'University/Institute of Highest Degree',     type: 'text',   required: true },
       { key: 'mtech_specialization',       label: 'M.Tech / M.E. Specialization',               type: 'text' },
-      { key: 'mtech_month_year',           label: 'Month & Year of Passing M.Tech / M.E.',      type: 'text' },
+      { key: 'mtech_month_year',           label: 'Month & Year of Passing M.Tech / M.E.',      type: 'month' },
       { key: 'mtech_degree',              label: 'M.Tech / M.E. Degree Name',                   type: 'text' },
       { key: 'mtech_university',           label: 'University/Institute of M.Tech / M.E.',       type: 'text' },
       { key: 'date_of_joining',           label: 'Date of Joining PDEU',                         type: 'date',   required: true },
@@ -126,7 +127,7 @@ export const TABS = [
       { key: 'division',              label: 'Division',                                                 type: 'text' },
       { key: 'batch',                 label: 'Batch',                                                   type: 'text' },
       { key: 'is_course_coordinator', label: 'Are you the Course Coordinator?',                        type: 'select', options: ['Yes', 'No'],                                          required: true },
-      { key: 'cc_name',               label: 'Course Coordinator Name (if not you)',                    type: 'text',   conditionalOn: { key: 'is_course_coordinator', value: 'No' } },
+      { key: 'cc_name',               label: 'Course Coordinator Name (if not you)',                    type: 'text',   required: true, conditionalOn: { key: 'is_course_coordinator', value: 'No' } },
       { key: 'course_file_submitted', label: 'Course File Submitted?',                                  type: 'select', options: ['Yes', 'No', 'N/A'],                                  required: true },
 
       // ── Mid Semester Question Paper ─────────────────────────
@@ -154,7 +155,7 @@ export const TABS = [
       { key: 'enrollment_type', label: 'Type of Enrollment',                           type: 'select', options: ['Full-time', 'Part-time'], required: true },
       { key: 'start_date',      label: 'Start Date',                                   type: 'date', required: true },
       { key: 'degree_status',   label: 'Degree Status',                                type: 'select', options: ['Ongoing', 'Awarded'], required: true },
-      { key: 'end_date',        label: 'End Date (if Degree Awarded)',                  type: 'date', conditionalOn: { key: 'degree_status', value: 'Awarded' } },
+      { key: 'end_date',        label: 'End Date (if Degree Awarded)',                  type: 'date', required: true, conditionalOn: { key: 'degree_status', value: 'Awarded' } },
       { key: 'thesis_title',    label: 'Thesis Title',                                 type: 'textarea' },
       ...SDG, ...PROOF,
     ],
@@ -176,11 +177,11 @@ export const TABS = [
       { key: 'coauthor_affiliations',  label: 'Co-author Affiliations (by ";")',        type: 'textarea' },
       { key: 'collaboration_institutes', label: 'Collaboration Institutes / Industry', type: 'textarea' },
       { key: 'btech_coauthor',         label: 'B.Tech Student as Co-author?',          type: 'select', options: ['Yes', 'No'] },
-      { key: 'btech_roll_numbers',     label: 'B.Tech Roll Numbers (separate multiple roll numbers with commas)',                   type: 'text', conditionalOn: { key: 'btech_coauthor', value: 'Yes' } },
+      { key: 'btech_roll_numbers',     label: 'B.Tech Roll Numbers (separate multiple roll numbers with commas)',                   type: 'text', required: true, conditionalOn: { key: 'btech_coauthor', value: 'Yes' } },
       { key: 'mtech_coauthor',         label: 'M.Tech Student as Co-author?',          type: 'select', options: ['Yes', 'No'] },
-      { key: 'mtech_roll_numbers',     label: 'M.Tech Roll Numbers (separate multiple roll numbers with commas)',                   type: 'text', conditionalOn: { key: 'mtech_coauthor', value: 'Yes' } },
+      { key: 'mtech_roll_numbers',     label: 'M.Tech Roll Numbers (separate multiple roll numbers with commas)',                   type: 'text', required: true, conditionalOn: { key: 'mtech_coauthor', value: 'Yes' } },
       { key: 'phd_coauthor',           label: 'PhD Student as Co-author?',             type: 'select', options: ['Yes', 'No'] },
-      { key: 'phd_roll_numbers',       label: 'PhD Roll Numbers (separate multiple roll numbers with commas)',                      type: 'text', conditionalOn: { key: 'phd_coauthor', value: 'Yes' } },
+      { key: 'phd_roll_numbers',       label: 'PhD Roll Numbers (separate multiple roll numbers with commas)',                      type: 'text', required: true, conditionalOn: { key: 'phd_coauthor', value: 'Yes' } },
       { key: 'journal_or_conf_name',   label: 'Journal / Conference / Book Name',      type: 'text', required: true },
       { key: 'impact_factor',          label: 'Impact Factor of Journal',              type: 'number' },
       { key: 'volume_no',              label: 'Volume No.',                             type: 'text' },
@@ -344,7 +345,7 @@ export const TABS = [
     fields: [
       { key: 'event_name',          label: 'Name of Event',                            type: 'text',   required: true },
       { key: 'activity_type',       label: 'Activity Type',                             type: 'select', options: ['Hackathon', 'Ideathon', 'Open Research', 'Innovation Contest', 'Internship Mentoring', 'Other'], required: true },
-      { key: 'activity_type_other', label: 'Specify if Other',                          type: 'text',   conditionalOn: { key: 'activity_type', value: 'Other' } },
+      { key: 'activity_type_other', label: 'Specify if Other',                          type: 'text', required: true,   conditionalOn: { key: 'activity_type', value: 'Other' } },
       { key: 'academic_year',       label: 'Academic Year',                             type: 'select', options: ACADEMIC_YEARS,   required: true },
       { key: 'start_date',          label: 'Start Date',                                type: 'date' },
       { key: 'end_date',            label: 'End Date',                                  type: 'date' },
@@ -408,9 +409,8 @@ export const TABS = [
       { key: 'students_participated',  label: 'No. of Students Participated',           type: 'number', required: true },
       { key: 'purpose',                label: 'Purpose of Visit',                        type: 'select', options: ['Academic Learning', 'Internship Scouting', 'Project Work', 'Industry Exposure', 'Other'] },
       { key: 'industry_feedback',      label: 'Feedback from Industry (if any)',         type: 'textarea' },
-      { key: 'proof_available',        label: 'Supporting Document Available?',               type: 'select', options: ['Yes', 'No'] },
-      { key: 'drive_link',             label: 'OneDrive / Drive Link',                   type: 'file' },
       { key: 'report_name',            label: 'Name of Report',                          type: 'text' },
+      ...PROOF,
     ],
   },
 
@@ -426,6 +426,7 @@ export const TABS = [
       { key: 'course_level',   label: 'Level',                                          type: 'select', options: ['UG', 'PG', 'PhD'],               required: true },
       { key: 'department',     label: 'Offering Department / Centre / Unit',             type: 'text',   required: true },
       { key: 'total_credits',  label: 'Total Credit Score',                             type: 'number', required: true },
+      ...PROOF,
     ],
   },
 
@@ -446,17 +447,17 @@ export const TABS = [
 
       { key: 'higher_studies_course',         label: 'Course / Degree',                  type: 'text',   required: true, conditionalOn: { key: 'placement_type', value: 'Higher Studies' } },
       { key: 'higher_studies_specialization', label: 'Specialization',                   type: 'text',   required: true, conditionalOn: { key: 'placement_type', value: 'Higher Studies' } },
-      { key: 'higher_studies_admission_year', label: 'Year of Admission',                type: 'text',   required: true, conditionalOn: { key: 'placement_type', value: 'Higher Studies' } },
+      { key: 'higher_studies_admission_year', label: 'Year of Admission',                type: 'number',   required: true, conditionalOn: { key: 'placement_type', value: 'Higher Studies' } },
       { key: 'higher_studies_institution',    label: 'Institution / University',         type: 'text',   required: true, conditionalOn: { key: 'placement_type', value: 'Higher Studies' } },
       { key: 'higher_studies_country',        label: 'Country',                          type: 'text',   required: true, conditionalOn: { key: 'placement_type', value: 'Higher Studies' } },
 
       { key: 'business_name',       label: 'Startup / Business Name',                    type: 'text',   required: true, conditionalOn: { key: 'placement_type', values: ['Startup / Own Business', 'Own Business'] } },
       { key: 'business_sector',     label: 'Nature / Sector of Business',                type: 'text',   required: true, conditionalOn: { key: 'placement_type', values: ['Startup / Own Business', 'Own Business'] } },
-      { key: 'business_start_year', label: 'Year Started',                               type: 'text',   required: true, conditionalOn: { key: 'placement_type', values: ['Startup / Own Business', 'Own Business'] } },
+      { key: 'business_start_year', label: 'Year Started',                               type: 'number',   required: true, conditionalOn: { key: 'placement_type', values: ['Startup / Own Business', 'Own Business'] } },
       { key: 'business_location',   label: 'Business Location',                          type: 'text',   required: true, conditionalOn: { key: 'placement_type', values: ['Startup / Own Business', 'Own Business'] } },
 
       { key: 'other_outcome_details', label: 'Other Outcome Details',                    type: 'textarea', required: true, conditionalOn: { key: 'placement_type', value: 'Other' } },
-      { key: 'proof_link',            label: 'Supporting Document / Email Link',         type: 'file',   required: true },
+      ...PROOF,
     ],
   },
 
@@ -475,7 +476,7 @@ export const TABS = [
       { key: 'faculty_organizer',    label: 'Name of Faculty Organizer',                type: 'text' },
       { key: 'activity_dates',       label: 'Activity Dates',                            type: 'text' },
       { key: 'attendees_count',      label: 'Approx. No. of Attendees',                 type: 'number' },
-      { key: 'event_report_link',    label: 'Event Report Link',                        type: 'file' },
+      ...PROOF,
     ],
   },
 
@@ -490,7 +491,7 @@ export const TABS = [
       { key: 'amount_lacs',          label: 'Amount (Lacs ₹)',                          type: 'number',   required: true },
       { key: 'amount_utilized_lacs', label: 'Amount Utilized (Lacs ₹)',                type: 'number' },
       { key: 'outcomes',             label: 'Outcomes of the Project',                  type: 'textarea' },
-      ...SDG,
+      ...SDG, ...PROOF,
     ],
   },
 
@@ -507,6 +508,7 @@ export const TABS = [
       { key: 'examination_month',        label: 'Month and Year of Examination',        type: 'month',  required: true },
       { key: 'qualified',                label: 'Passed / Qualified?',                   type: 'select', options: ['Yes', 'No'], required: true },
       { key: 'score',                    label: 'Score / Percentile / Rank',             type: 'text',   required: true },
+      ...PROOF,
     ],
   },
 ]

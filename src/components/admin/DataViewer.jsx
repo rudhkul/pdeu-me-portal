@@ -132,7 +132,7 @@ export default function DataViewer() {
     try {
       await updateRecord(tab.id, editingRow.userId, editingRow.row.id, values)
       await fetchAll(); setEditingRow(null); reset()
-      toast.success('Record updated!')
+      toast.success('Record updated.')
     } catch (e) { toast.error('Update failed: ' + e.message) }
     finally { setSaving(false) }
   }

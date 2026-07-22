@@ -1,5 +1,6 @@
 // ── GitHub Data Access — via Cloudflare Worker proxy ─────────
 import { getToken } from './auth'
+import { deleteStoredProof, proofPathsFromRecord } from './filestore'
 
 // The PAT never touches the browser. All requests go through
 // the worker at VITE_WORKER_URL, which adds auth server-side.
@@ -162,6 +163,17 @@ export async function updateRecord(tabId, userId, recordId, changes) {
       : r
   )
   await writeJSON(path, updated, sha)
+
+  const saved = updated.find(record => record.id === recordId)
+  const retainedPaths = new Set(proofPathsFromRecord(saved))
+  const obsoletePaths = proofPathsFromRecord(existing).filter(proofPath => !retainedPaths.has(proofPath))
+  const cleanup = await Promise.allSettled(obsoletePaths.map(deleteStoredProof))
+  cleanup.forEach((result, index) => {
+    if (result.status === 'rejected') {
+      console.warn(`Could not remove replaced proof ${obsoletePaths[index]}: ${result.reason?.message || result.reason}`)
+    }
+  })
+
   return updated
 }
 
@@ -177,8 +189,20 @@ function getChangedFields(original, changes) {
 export async function deleteRecord(tabId, userId, recordId) {
   const path          = `records/${tabId}/${userId}.json`
   const { data, sha } = await readJSON(path)
-  const updated       = (data || []).filter(r => r.id !== recordId)
+  const existing      = (data || []).find(record => record.id === recordId)
+  if (!existing) throw new Error('Record not found.')
+
+  const updated = (data || []).filter(record => record.id !== recordId)
   await writeJSON(path, updated, sha)
+
+  const proofPaths = proofPathsFromRecord(existing)
+  const cleanup = await Promise.allSettled(proofPaths.map(deleteStoredProof))
+  cleanup.forEach((result, index) => {
+    if (result.status === 'rejected') {
+      console.warn(`Could not remove deleted record proof ${proofPaths[index]}: ${result.reason?.message || result.reason}`)
+    }
+  })
+
   return updated
 }
 

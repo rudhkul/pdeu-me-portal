@@ -7,6 +7,7 @@ import { getFacultyRecords, addRecord, updateRecord, deleteRecord } from '../../
 import { notifyAdmin } from '../../lib/notify'
 import DynamicField from '../common/DynamicField'
 import CSVImport from '../common/CSVImport'
+import { validateRecord } from '../../utils/recordValidation'
 import SharedPublications from './SharedPublications'
 import DOILookup from '../common/DOILookup'
 import toast from 'react-hot-toast'
@@ -45,7 +46,7 @@ export default function TabForm() {
   const [isDirty,  setIsDirty]  = useState(false)
   const [search,   setSearch]   = useState('')
 
-  const { register, handleSubmit, reset, watch, setValue,
+  const { register, handleSubmit, reset, watch, setValue, setError, clearErrors,
           formState: { errors, isDirty: formDirty } } = useForm({
     shouldUnregister: true,
   })
@@ -84,6 +85,16 @@ export default function TabForm() {
   }
 
   async function onSubmit(values) {
+    clearErrors()
+    const validationIssues = validateRecord(tab, values)
+    if (validationIssues.length > 0) {
+      for (const issue of validationIssues) {
+        setError(issue.field, { type: 'validate', message: issue.message })
+      }
+      toast.error(validationIssues[0].message)
+      return
+    }
+
     // Proof required check
     if (proofRequired && !values.drive_link) {
       toast.error('Please upload a PDF supporting document before saving.')
@@ -125,7 +136,7 @@ export default function TabForm() {
         setRecords(await updateRecord(tab.id, session.userId, editing, payload))
         setEditing(null); setShowForm(false); reset()
         action = 'updated'
-        toast.success('Record updated!')
+        toast.success('Record updated.')
       } else {
         setRecords(await addRecord(tab.id, session.userId, payload))
         setShowForm(false); reset()
@@ -142,7 +153,13 @@ export default function TabForm() {
     let saved = 0
     let current = records
     for (const row of rows) {
-      const payload = { ...row, facultyName: session.fullName }
+      const payload = {
+        ...row,
+        drive_link: '',
+        proof_link: '',
+        event_report_link: '',
+        facultyName: session.fullName,
+      }
       try {
         current = await addRecord(tab.id, session.userId, payload)
         saved++
@@ -197,6 +214,18 @@ export default function TabForm() {
   if (!tab) return <div className="p-8 text-center text-gray-500 dark:text-gray-400">Tab not found.</div>
 
   const previewFields = tab.fields.filter(f => !['file','textarea','boolean','proof_upload','sdg_multi'].includes(f.type)).slice(0, 4)
+
+  function getUploadedDocuments(row) {
+    return tab.fields
+      .filter(field => field.type === 'proof_upload' && row[field.key])
+      .map(field => ({
+        key: field.key,
+        path: row[field.key],
+        label: field.label
+          .replace(/^Upload\s+/i, '')
+          .replace(/\s*\(PDF\)\s*$/i, ''),
+      }))
+  }
 
   // Client-side search within faculty's own records
   const filteredRecords = search
@@ -373,14 +402,26 @@ export default function TabForm() {
                       <td className="px-3 py-2 text-gray-400 dark:text-gray-500 text-xs whitespace-nowrap">
                         {formatDate(row.updatedAt || row.createdAt)}
                       </td>
-                      {/* Proof status */}
-                      <td className="px-3 py-2 text-xs whitespace-nowrap">
-                        {row.drive_link
-                          ? <button type="button" onClick={() => handleOpenProof(row.drive_link)} className="text-green-600 dark:text-green-400 font-medium hover:underline">View Document</button>
-                          : proofRequired
-                          ? <span className="text-red-500 dark:text-red-400">Not Submitted</span>
-                          : <span className="text-gray-300 dark:text-gray-600">—</span>
-                        }
+                      {/* Uploaded supporting documents */}
+                      <td className="px-3 py-2 text-xs">
+                        {getUploadedDocuments(row).length > 0 ? (
+                          <div className="flex flex-col items-start gap-1">
+                            {getUploadedDocuments(row).map(document => (
+                              <button
+                                key={document.key}
+                                type="button"
+                                onClick={() => handleOpenProof(document.path)}
+                                className="text-green-600 dark:text-green-400 font-medium hover:underline text-left"
+                              >
+                                {document.label}
+                              </button>
+                            ))}
+                          </div>
+                        ) : proofRequired ? (
+                          <span className="text-red-500 dark:text-red-400">Not Submitted</span>
+                        ) : (
+                          <span className="text-gray-300 dark:text-gray-600">—</span>
+                        )}
                       </td>
                       <td className="px-3 py-2">
                         <div className="flex gap-3">
