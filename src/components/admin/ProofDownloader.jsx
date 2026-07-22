@@ -86,6 +86,9 @@ export default function ProofDownloader({ rows, columns, tab, label }) {
     return paths
   }
   const withProof = rows.filter(r => getProofPaths(r).length > 0)
+  const proofItems = rows.flatMap(row =>
+    getProofPaths(row).map(proof => ({ row, ...proof }))
+  )
   const withoutProof = rows.length - withProof.length
 
   async function downloadZip() {
@@ -95,7 +98,7 @@ export default function ProofDownloader({ rows, columns, tab, label }) {
     }
 
     setStatus('working')
-    setProgress({ done: 0, total: withProof.length, failed: 0 })
+    setProgress({ done: 0, total: proofItems.length, failed: 0 })
 
     const zip    = new JSZip()
     let   failed = 0
@@ -111,25 +114,25 @@ export default function ProofDownloader({ rows, columns, tab, label }) {
 
     // 2 — Supporting-document PDFs
     const proofFolder = zip.folder('proofs')
-    for (let i = 0; i < withProof.length; i++) {
-      const row = withProof[i]
-      toast(`Fetching proof ${i + 1} / ${withProof.length}…`, { id: 'proof-zip', duration: 300000 })
-      setProgress({ done: i + 1, total: withProof.length, failed })
+    for (let i = 0; i < proofItems.length; i++) {
+      const { row, path, label: proofLabel } = proofItems[i]
+      toast(`Fetching proof ${i + 1} / ${proofItems.length}…`, { id: 'proof-zip', duration: 300000 })
+      setProgress({ done: i + 1, total: proofItems.length, failed })
 
       try {
-        const { blob, name } = await fetchProofBlob(row.drive_link)
-        // Prefix filename with faculty last name for easy identification
+        const { blob, name } = await fetchProofBlob(path)
         const lastName = (row.facultyName || 'unknown').trim().split(/\s+/).pop()
-        proofFolder.file(`${lastName}_${name}`, blob)
+        const recordId = String(row.id || i + 1).replace(/[^a-zA-Z0-9_-]/g, '')
+        proofFolder.file(`${lastName}_${recordId}_${proofLabel}_${name}`, blob)
       } catch (e) {
         console.warn(`Proof download failed for ${row.facultyName}: ${e.message}`)
         failed++
-        setProgress(p => ({ ...p, failed }))
-        // Add a placeholder text file in the ZIP so admin knows what failed
+        setProgress(progress => ({ ...progress, failed }))
+        const lastName = (row.facultyName || 'unknown').trim().split(/\s+/).pop()
         proofFolder.file(
-          `FAILED_${(row.facultyName || 'unknown').split(' ').pop()}_proof-missing.txt`,
-          `Could not download proof for ${row.facultyName}.
-Path: ${row.drive_link}
+          `FAILED_${lastName}_${proofLabel}.txt`,
+          `Could not download supporting document for ${row.facultyName}.
+Path: ${path}
 Error: ${e.message}`
         )
       }
@@ -147,7 +150,7 @@ Error: ${e.message}`
       a.click()
       URL.revokeObjectURL(url)
 
-      const ok = withProof.length - failed
+      const ok = proofItems.length - failed
       toast.success(
         failed === 0
           ? ` Downloaded ${ok} supporting-document PDF${ok !== 1 ? 's' : ''} + Excel in one ZIP`

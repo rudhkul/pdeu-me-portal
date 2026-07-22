@@ -3,6 +3,16 @@ import { useAuth } from '../../hooks/useAuth'
 import { TABS } from '../../config/tabs'
 import { getFacultyRecords } from '../../lib/github'
 import ResearchMetrics from './ResearchMetrics'
+
+function hasSupportingDocument(record) {
+  if (record?.drive_link?.startsWith('proofs/')) return true
+  return Object.entries(record || {}).some(([key, value]) =>
+    key.endsWith('_pdf') &&
+    typeof value === 'string' &&
+    value.startsWith('proofs/')
+  )
+}
+
 import CoauthorNetwork from './CoauthorNetwork'
 import toast from 'react-hot-toast'
 
@@ -165,7 +175,7 @@ export default function FacultyProfile() {
                           </td>
                         ))}
                         <td className="px-2 py-1.5">
-                          {rec.drive_link
+                          {hasSupportingDocument(rec)
                             ? <span className="text-green-600 dark:text-green-400">Available</span>
                             : <span className="text-gray-300 dark:text-gray-600">—</span>}
                         </td>
@@ -262,7 +272,7 @@ export default function FacultyProfile() {
                         </td>
                       ))}
                       <td style={{ textAlign: 'center' }}>
-                        {rec.drive_link ? '' : '—'}
+                        {hasSupportingDocument(rec) ? '' : '—'}
                       </td>
                     </tr>
                   ))}

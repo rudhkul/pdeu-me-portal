@@ -10,7 +10,7 @@ function json(body, status, env, extra = {}) {
     headers: {
       'Content-Type': 'application/json',
       'Access-Control-Allow-Origin': env.ALLOWED_ORIGIN,
-      'Access-Control-Allow-Methods': 'GET, PUT, POST, OPTIONS',
+      'Access-Control-Allow-Methods': 'GET, PUT, POST, DELETE, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Session-Token',
       'Access-Control-Max-Age': '86400',
       'Cache-Control': 'no-store',
@@ -50,6 +50,14 @@ async function ghGet(env, repoPath, raw = false) {
 async function ghPut(env, repoPath, body) {
   return fetch(repoUrl(env, repoPath), {
     method: 'PUT',
+    headers: githubHeaders(env),
+    body,
+  })
+}
+
+async function ghDelete(env, repoPath, body) {
+  return fetch(repoUrl(env, repoPath), {
+    method: 'DELETE',
     headers: githubHeaders(env),
     body,
   })
@@ -353,7 +361,42 @@ export default {
         if (session.role !== 'admin' && !facultyOwnsPath(repoPath, session.userId)) {
           return fail('You may modify only your own records and files.', 403, env)
         }
-        const response = await ghPut(env, repoPath, await request.text())
+        const requestBody = await request.text()
+        if (repoPath.startsWith('proofs/')) {
+          let upload
+          try {
+            upload = JSON.parse(requestBody)
+          } catch {
+            return fail('Invalid upload payload.', 400, env)
+          }
+          const content = typeof upload.content === 'string' ? upload.content : ''
+          const padding = content.endsWith('==') ? 2 : content.endsWith('=') ? 1 : 0
+          const decodedBytes = Math.floor(content.length * 3 / 4) - padding
+          if (!repoPath.toLowerCase().endsWith('.pdf') || !content.startsWith('JVBERi0')) {
+            return fail('Only PDF supporting documents are accepted.', 415, env)
+          }
+          if (decodedBytes > 2 * 1024 * 1024) {
+            return fail('Supporting document exceeds the 2 MB limit.', 413, env)
+          }
+        }
+        const response = await ghPut(env, repoPath, requestBody)
+        return new Response(await response.arrayBuffer(), {
+          status: response.status,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': env.ALLOWED_ORIGIN,
+            'Cache-Control': 'no-store',
+          },
+        })
+      }
+      if (request.method === 'DELETE') {
+        if (!repoPath.startsWith('proofs/')) {
+          return fail('Only supporting-document files may be deleted through this endpoint.', 403, env)
+        }
+        if (session.role !== 'admin' && !facultyOwnsPath(repoPath, session.userId)) {
+          return fail('You may delete only your own supporting documents.', 403, env)
+        }
+        const response = await ghDelete(env, repoPath, await request.text())
         return new Response(await response.arrayBuffer(), {
           status: response.status,
           headers: {

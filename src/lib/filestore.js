@@ -122,11 +122,47 @@ export function buildFileName(tabId, facultyName, formValues) {
   return `${tabNum}_${lastName}_${keyVal}_${new Date().toISOString().slice(0, 10)}.pdf`
 }
 
+export function proofPathsFromRecord(record) {
+  const paths = new Set()
+  for (const [key, value] of Object.entries(record || {})) {
+    if (
+      (key === 'drive_link' || key.endsWith('_pdf')) &&
+      typeof value === 'string' &&
+      value.startsWith('proofs/')
+    ) {
+      paths.add(value)
+    }
+  }
+  return [...paths]
+}
+
+export async function deleteStoredProof(storedPath) {
+  if (typeof storedPath !== 'string' || !storedPath.startsWith('proofs/')) return false
+  const sha = await getExistingSha(storedPath)
+  if (!sha) return false
+
+  const res = await fetch(`${API}/${storedPath}`, {
+    method: 'DELETE',
+    headers: authHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify({
+      message: `proof: delete ${storedPath}`,
+      sha,
+    }),
+  })
+
+  if (res.status === 404) return false
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}))
+    throw new Error(error.error || error.message || `Proof deletion failed (${res.status})`)
+  }
+  return true
+}
+
 export async function uploadProof(file, tabId, userId, facultyName, formValues) {
   if (!file.type?.includes('pdf') && !file.name?.toLowerCase().endsWith('.pdf'))
     throw new Error('Only PDF files are accepted as proof.')
-  if (file.size > 10 * 1024 * 1024)
-    throw new Error(`File too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum is 10 MB.`)
+  if (file.size > 2 * 1024 * 1024)
+    throw new Error(`File too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum is 2 MB. Compress the PDF before uploading.`)
 
   const fileName = buildFileName(tabId, facultyName, formValues)
   const filePath = `proofs/${tabId}/${userId}/${fileName}`
