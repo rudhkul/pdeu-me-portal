@@ -42,13 +42,21 @@ export default function FacultyProfile() {
     async function load() {
       setLoading(true)
       try {
-        const results = {}
-        await Promise.all(TABS.map(async tab => {
-          results[tab.id] = await getFacultyRecords(tab.id, session.userId)
+        const results = await Promise.all(TABS.map(async tab => {
+          try {
+            return [tab.id, await getFacultyRecords(tab.id, session.userId), null]
+          } catch (error) {
+            return [tab.id, [], error]
+          }
         }))
-        setData(results)
-      } catch (e) { toast.error('Failed to load: ' + e.message) }
-      finally { setLoading(false) }
+        setData(Object.fromEntries(results.map(([tabId, records]) => [tabId, records])))
+        const failed = results.filter(([, , error]) => error).length
+        if (failed > 0) {
+          toast.error(`${failed} section${failed !== 1 ? 's' : ''} could not be loaded. The available data is still shown.`)
+        }
+      } finally {
+        setLoading(false)
+      }
     }
     load()
   }, [])
@@ -76,16 +84,22 @@ export default function FacultyProfile() {
           @page { size: A4; margin: 15mm 15mm 15mm 15mm; }
           body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 
-          /* Hide everything except the print area */
-          body > * { display: none !important; }
-          #print-root { display: block !important; }
+          body * { visibility: hidden !important; }
+          #print-root, #print-root * { visibility: visible !important; }
+          #print-root {
+            display: block !important;
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+          }
 
           /* Header */
           .print-header { background: #003087 !important; color: white !important; padding: 14pt !important; border-radius: 0 !important; margin-bottom: 10pt; }
           .print-header * { color: white !important; }
 
           /* Section cards */
-          .print-card { page-break-inside: avoid; border: 1px solid #e5e7eb !important; border-radius: 6pt !important; padding: 8pt !important; margin-bottom: 8pt !important; background: white !important; box-shadow: none !important; }
+          .print-card { page-break-inside: auto; border: 1px solid #e5e7eb !important; border-radius: 6pt !important; padding: 8pt !important; margin-bottom: 8pt !important; background: white !important; box-shadow: none !important; }
           .print-card h3 { font-size: 10pt !important; font-weight: 600; color: #003087 !important; border-bottom: 1px solid #e5e7eb; padding-bottom: 3pt; margin-bottom: 5pt; }
 
           /* Tables */

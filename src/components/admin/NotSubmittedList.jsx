@@ -3,6 +3,7 @@ import { getUsers, getFacultyRecords } from '../../lib/github'
 import { sendReminderEmail } from '../../lib/notify'
 import { TABS } from '../../config/tabs'
 import toast from 'react-hot-toast'
+import MonthlyClosureStatus from './MonthlyClosureStatus'
 
 export default function NotSubmittedList() {
   const [faculty,   setFaculty]   = useState([])
@@ -99,8 +100,10 @@ export default function NotSubmittedList() {
     <div className="p-6 max-w-4xl mx-auto">
       <h1 className="text-2xl font-bold text-pdeu-blue dark:text-white mb-1">Submission Status</h1>
       <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">
-        Track who has filled all tabs and send targeted email reminders.
+        Track monthly declarations, section completion and pending submissions.
       </p>
+
+      <MonthlyClosureStatus />
 
       {loading ? (
         <div className="card flex items-center gap-3 text-gray-400">
