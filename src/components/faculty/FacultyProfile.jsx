@@ -14,7 +14,6 @@ function hasSupportingDocument(record) {
   )
 }
 
-import CoauthorNetwork from './CoauthorNetwork'
 import toast from 'react-hot-toast'
 
 const BASE = import.meta.env.BASE_URL
@@ -192,7 +191,6 @@ export default function FacultyProfile() {
         <ResearchMetrics session={session} localPubs={pubs} />
 
         {/* Co-author Network */}
-        <CoauthorNetwork publications={pubs} facultyName={session.fullName} />
 
         {/* Tab summaries */}
         {filledTabs.map(tab => {
