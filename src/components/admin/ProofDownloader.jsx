@@ -1,30 +1,11 @@
 import { useState } from 'react'
 import JSZip from 'jszip'
 import toast from 'react-hot-toast'
+import { downloadProof } from '../../lib/filestore'
 
-const WORKER = import.meta.env.VITE_WORKER_URL
-const API    = `${WORKER}/api`
-
-// Download a supporting-document PDF by its stored GitHub path e.g. "proofs/tab5/usr_abc/file.pdf"
-// Uses the raw content API which works for files up to 100 MB without size limits.
-async function fetchProofBlob(githubPath) {
-  // Use the raw media type — returns the file bytes directly, no base64, no size limit
-  const res = await fetch(`${API}/contents/${githubPath}`, {
-    headers: {
-      Authorization: `Bearer ${PAT}`,
-      Accept: 'application/vnd.github.raw+json',  // returns raw bytes, not base64 JSON
-    },
-  })
-
-  if (res.status === 404) throw new Error(`File not found: ${githubPath}`)
-  if (!res.ok)            throw new Error(`GitHub API error ${res.status} for ${githubPath}`)
-
-  // With raw media type the response body IS the file — no decoding needed
-  const blob = await res.blob()
-
-  // Extract filename from path (last segment)
-  const name = githubPath.split('/').pop() || 'proof.pdf'
-  return { blob: new Blob([blob], { type: 'application/pdf' }), name }
+async function fetchProofBlob(storedPath) {
+  const { blob, fileName } = await downloadProof(storedPath)
+  return { blob, name: fileName }
 }
 
 // Build Excel buffer in-memory (without triggering browser download)

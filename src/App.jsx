@@ -1,6 +1,7 @@
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import { AuthProvider, useAuth } from './hooks/useAuth'
+import ErrorBoundary from './components/ErrorBoundary'
 import ProtectedRoute from './components/ProtectedRoute'
 import Layout from './components/Layout'
 import Login from './components/Login'
@@ -32,8 +33,9 @@ const Any     = el => <ProtectedRoute><Layout>{el}</Layout></ProtectedRoute>
 
 export default function App() {
   return (
-    <AuthProvider>
-      <HashRouter>
+    <ErrorBoundary>
+      <AuthProvider>
+        <HashRouter>
         <Toaster position="top-right" toastOptions={{
           duration: 4000,
           style: { fontSize: '14px', borderRadius: '10px' },
@@ -60,7 +62,8 @@ export default function App() {
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-      </HashRouter>
-    </AuthProvider>
+        </HashRouter>
+      </AuthProvider>
+    </ErrorBoundary>
   )
 }

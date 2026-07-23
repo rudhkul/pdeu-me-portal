@@ -205,11 +205,6 @@ export default function DynamicField({ field, register, watch, setValue, errors,
         </div>
       )}
 
-      {/* File (multi-link) */}
-      {field.type === 'file' && (
-        <MultiFileInput fieldKey={field.key} register={register} required={field.required} error={err} />
-      )}
-
       {/* Standard inputs */}
       {field.type === 'url'      && <input id={field.key} {...baseReg} type="url" placeholder="https://" className={cls} />}
       {field.type === 'date'     && <input id={field.key} {...baseReg} type="date"            className={cls} />}
