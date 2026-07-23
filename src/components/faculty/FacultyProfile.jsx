@@ -1,4 +1,5 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useAuth } from '../../hooks/useAuth'
 import { TABS } from '../../config/tabs'
 import { getFacultyRecords } from '../../lib/github'
@@ -36,7 +37,6 @@ export default function FacultyProfile() {
   const { session }  = useAuth()
   const [data,    setData]    = useState({})
   const [loading, setLoading] = useState(true)
-  const printRef = useRef()
 
   useEffect(() => {
     async function load() {
@@ -61,7 +61,54 @@ export default function FacultyProfile() {
     load()
   }, [])
 
-  function printProfile() { window.print() }
+  async function printProfile() {
+    const source = document.getElementById('print-root')
+    const printStyles = document.getElementById('faculty-print-styles')?.textContent || ''
+
+    if (!source) {
+      toast.error('Print summary is unavailable.')
+      return
+    }
+
+    const popup = window.open('', '_blank', 'width=1100,height=800')
+    if (!popup) {
+      toast.error('The browser blocked the print window. Allow pop-ups for this portal.')
+      return
+    }
+
+    popup.document.open()
+    popup.document.write(`<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <base href="${window.location.origin}${BASE}">
+  <title>${session.fullName} — Faculty Summary</title>
+  <style>
+    html, body { margin: 0; padding: 0; background: white; color: #111827; font-family: Arial, sans-serif; }
+    #print-root { display: block !important; padding: 0; }
+    ${printStyles}
+    @media screen { #print-root { display: block !important; padding: 15mm; } }
+  </style>
+</head>
+<body>
+  <div id="print-root">${source.innerHTML}</div>
+</body>
+</html>`)
+    popup.document.close()
+
+    const images = [...popup.document.images]
+    await Promise.all(images.map(image => {
+      if (image.complete) return Promise.resolve()
+      return new Promise(resolve => {
+        image.onload = resolve
+        image.onerror = resolve
+      })
+    }))
+
+    await new Promise(resolve => setTimeout(resolve, 300))
+    popup.focus()
+    popup.print()
+  }
 
   const profile  = data['tab1']?.[0] || {}
   const pubs     = data['tab5'] || []
@@ -79,18 +126,14 @@ export default function FacultyProfile() {
   return (
     <>
       {/* ── Print stylesheet ──────────────────────────────────── */}
-      <style>{`
+      <style id="faculty-print-styles">{`
         @media print {
           @page { size: A4; margin: 15mm 15mm 15mm 15mm; }
           body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 
-          body * { visibility: hidden !important; }
-          #print-root, #print-root * { visibility: visible !important; }
+          body > * { display: none !important; }
           #print-root {
             display: block !important;
-            position: absolute;
-            left: 0;
-            top: 0;
             width: 100%;
           }
 
@@ -210,6 +253,7 @@ export default function FacultyProfile() {
       </div>
 
       {/* ── Print view (hidden on screen, shown on print) ──────── */}
+      {createPortal(
       <div id="print-root">
         {/* Cover header */}
         <div className="print-header" style={{ background: '#003087', color: 'white', padding: '14pt', marginBottom: '10pt' }}>
@@ -300,7 +344,9 @@ export default function FacultyProfile() {
         <div className="print-footer">
           Department of Mechanical Engineering · PDEU · Portal developed and maintained by Dr Anirudh Kulkarni.
         </div>
-      </div>
+      </div>,
+      document.body
+      )}
     </>
   )
 }

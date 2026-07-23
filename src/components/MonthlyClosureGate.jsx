@@ -13,7 +13,7 @@ import {
 } from '../utils/reportingPeriod'
 
 export default function MonthlyClosureGate({ children }) {
-  const { session } = useAuth()
+  const { session, effectiveRole } = useAuth()
   const [loading, setLoading] = useState(true)
   const [closures, setClosures] = useState([])
   const [period, setPeriod] = useState(null)
@@ -22,7 +22,7 @@ export default function MonthlyClosureGate({ children }) {
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    if (!session || session.role === 'admin') {
+    if (!session || effectiveRole === 'admin') {
       setLoading(false)
       return
     }
@@ -36,9 +36,9 @@ export default function MonthlyClosureGate({ children }) {
       })
       .catch(error => toast.error(`Monthly status could not be loaded: ${error.message}`))
       .finally(() => setLoading(false))
-  }, [session?.userId])
+  }, [session?.userId, effectiveRole])
 
-  if (session?.role === 'admin') return children
+  if (effectiveRole === 'admin') return children
 
   async function declare(status) {
     if (status === 'extension' && !remarks.trim()) {
