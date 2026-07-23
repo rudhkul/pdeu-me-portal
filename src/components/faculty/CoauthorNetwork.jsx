@@ -76,8 +76,8 @@ export default function CoauthorNetwork({ publications = [], facultyName }) {
 
     const n = records.length + 1  // +1 for the faculty node
     const facultyShort = (facultyName || 'Faculty').split(' ').pop()
-    const nodes = [{ name: facultyShort, count: filtered.length }, ...entries.map(([name, count]) => ({ name, count }))]
-    const maxCount = Math.max(...entries.map(e => e[1]))
+    const nodes = [{ name: facultyShort, count: filtered.length }, ...ecords.map(([name, count]) => ({ name, count }))]
+    const maxCount = Math.max(...ecords.map(e => e[1]))
 
     // Arc angles
     const gap = 0.018
