@@ -114,6 +114,40 @@ export async function getAllFaculties() {
   return (data || []).filter(u => u.role === 'faculty').map(({ passwordHash, salt, ...rest }) => rest)
 }
 
+export async function getMonthlyClosures(userId) {
+  const { data } = await readJSON(`monthly-closures/${userId}.json`)
+  return data || []
+}
+
+export async function saveMonthlyClosure(userId, declaration) {
+  const path = `monthly-closures/${userId}.json`
+  const { data, sha } = await readJSON(path)
+  const now = new Date().toISOString()
+  const existing = (data || []).find(entry => entry.period === declaration.period)
+  const history = [
+    ...(existing?.history || []),
+    {
+      status: declaration.status,
+      remarks: declaration.remarks || '',
+      at: now,
+    },
+  ]
+  const entry = {
+    ...existing,
+    period: declaration.period,
+    status: declaration.status,
+    remarks: declaration.remarks || '',
+    declaredAt: now,
+    updatedAt: now,
+    history,
+  }
+  const updated = existing
+    ? (data || []).map(item => item.period === declaration.period ? entry : item)
+    : [...(data || []), entry]
+  await writeJSON(path, updated, sha)
+  return updated
+}
+
 export async function getFacultyRecords(tabId, userId) {
   const { data } = await readJSON(`records/${tabId}/${userId}.json`)
   return data || []

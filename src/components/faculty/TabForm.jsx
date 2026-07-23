@@ -8,6 +8,7 @@ import { notifyAdmin } from '../../lib/notify'
 import DynamicField from '../common/DynamicField'
 import CSVImport from '../common/CSVImport'
 import { validateRecord } from '../../utils/recordValidation'
+import { activeReportingPeriod } from '../../utils/reportingPeriod'
 import SharedPublications from './SharedPublications'
 import DOILookup from '../common/DOILookup'
 import toast from 'react-hot-toast'
@@ -120,7 +121,13 @@ export default function TabForm() {
 
     setSaving(true)
     try {
-      const payload = { ...values, facultyName: session.fullName }
+      const payload = {
+        ...values,
+        facultyName: session.fullName,
+        _reportingMonth: editing
+          ? records.find(record => record.id === editing)?._reportingMonth || activeReportingPeriod()
+          : activeReportingPeriod(),
+      }
       let action = 'added'
 
       if (tab.isProfile) {
@@ -159,6 +166,7 @@ export default function TabForm() {
         proof_link: '',
         event_report_link: '',
         facultyName: session.fullName,
+        _reportingMonth: activeReportingPeriod(),
       }
       try {
         current = await addRecord(tab.id, session.userId, payload)
@@ -213,7 +221,15 @@ export default function TabForm() {
 
   if (!tab) return <div className="p-8 text-center text-gray-500 dark:text-gray-400">Tab not found.</div>
 
-  const previewFields = tab.fields.filter(f => !['file','textarea','boolean','proof_upload','sdg_multi'].includes(f.type)).slice(0, 4)
+  const availablePreviewFields = tab.fields.filter(
+    field => !['file', 'textarea', 'boolean', 'proof_upload', 'sdg_multi'].includes(field.type)
+  )
+  const previewFields = tab.id === 'tab5'
+    ? [
+        tab.fields.find(field => field.key === 'title'),
+        ...availablePreviewFields.filter(field => field.key !== 'title'),
+      ].filter(Boolean).slice(0, 4)
+    : availablePreviewFields.slice(0, 4)
 
   function getUploadedDocuments(row) {
     return tab.fields

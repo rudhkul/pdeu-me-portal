@@ -17,6 +17,7 @@ import DeadlineManager from './components/admin/DeadlineManager'
 import NotificationSettings from './components/admin/NotificationSettings'
 import Announcements from './components/admin/Announcements'
 import NotSubmittedList from './components/admin/NotSubmittedList'
+import MonthlyClosureGate from './components/MonthlyClosureGate'
 
 function RootRedirect() {
   const { session, loading, effectiveRole } = useAuth()
@@ -25,7 +26,7 @@ function RootRedirect() {
   return <Navigate to={effectiveRole === 'admin' ? '/admin' : '/faculty'} replace />
 }
 
-const Faculty = el => <ProtectedRoute requiredRole="faculty"><Layout>{el}</Layout></ProtectedRoute>
+const Faculty = el => <ProtectedRoute requiredRole="faculty"><MonthlyClosureGate><Layout>{el}</Layout></MonthlyClosureGate></ProtectedRoute>
 const Admin   = el => <ProtectedRoute requiredRole="admin"><Layout>{el}</Layout></ProtectedRoute>
 const Any     = el => <ProtectedRoute><Layout>{el}</Layout></ProtectedRoute>
 

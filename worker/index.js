@@ -159,7 +159,8 @@ function facultyOwnsPath(path, userId) {
   const escaped = userId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   return new RegExp(`^records/tab\\d+/${escaped}\\.json$`).test(path) ||
     new RegExp(`^proofs/tab\\d+/${escaped}/[^/]+$`).test(path) ||
-    new RegExp(`^profile-pictures/${escaped}/[^/]+$`).test(path)
+    new RegExp(`^profile-pictures/${escaped}/[^/]+$`).test(path) ||
+    path === `monthly-closures/${userId}.json`
 }
 
 function facultyCanReadPath(path, userId) {
