@@ -33,6 +33,30 @@ function isDuplicate(records, values, editingId) {
   )
 }
 
+const RECORD_IDENTIFIER_KEYS = {
+  tab1: 'employee_code',
+  tab2: 'details',
+  tab3: 'course_name',
+  tab4: 'student_name',
+  tab5: 'title',
+  tab6: 'title',
+  tab7: 'brief_detail',
+  tab8: 'meeting_details',
+  tab9: 'event_name',
+  tab10: 'society_name',
+  tab11: 'course_name',
+  tab12: 'course_name',
+  tab13: 'event_name',
+  tab14: 'training_name',
+  tab15: 'event_name',
+  tab16: 'industry_name',
+  tab17: 'course_title',
+  tab18: 'student_name',
+  tab19: 'organisation_name',
+  tab20: 'project_title',
+  tab21: 'student_name',
+}
+
 export default function TabForm() {
   const { tabId }    = useParams()
   const { session }  = useAuth()
@@ -224,12 +248,12 @@ export default function TabForm() {
   const availablePreviewFields = tab.fields.filter(
     field => !['file', 'textarea', 'boolean', 'proof_upload', 'sdg_multi'].includes(field.type)
   )
-  const previewFields = tab.id === 'tab5'
-    ? [
-        tab.fields.find(field => field.key === 'title'),
-        ...availablePreviewFields.filter(field => field.key !== 'title'),
-      ].filter(Boolean).slice(0, 4)
-    : availablePreviewFields.slice(0, 4)
+  const identifierKey = RECORD_IDENTIFIER_KEYS[tab.id]
+  const identifierField = tab.fields.find(field => field.key === identifierKey)
+  const previewFields = [
+    identifierField,
+    ...availablePreviewFields.filter(field => field.key !== identifierKey),
+  ].filter(Boolean).slice(0, 4)
 
   function getUploadedDocuments(row) {
     return tab.fields
