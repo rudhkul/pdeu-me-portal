@@ -13,7 +13,7 @@ async function buildExcelBuffer(rows, columns, sheetName) {
   const ExcelJS = (await import('exceljs')).default
   const wb = new ExcelJS.Workbook()
   wb.creator = 'DIC Mechanical Portal'
-  const ws = wb.addWorksheet(sheetName.slice(0, 31))
+  const ws = wb.addWorksheet(sheetName.replace(/[\\/*?:\[\]]/g, '-').slice(0, 31) || 'Data')
   ws.columns = columns.map(c => ({ key: c.key, width: Math.max(c.label.length + 4, 18) }))
 
   const hRow = ws.addRow(columns.map(c => c.label))

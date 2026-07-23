@@ -16,7 +16,7 @@ export async function exportToExcel(rows, columns, sheetName = 'Data', fileName 
   wb.creator = 'DIC Mechanical Portal'
   wb.created  = new Date()
 
-  const ws = wb.addWorksheet(sheetName.slice(0, 31))
+  const ws = wb.addWorksheet(sheetName.replace(/[\\/*?:\[\]]/g, '-').slice(0, 31) || 'Data')
 
   ws.columns = columns.map(c => ({
     key:   c.key,
@@ -69,7 +69,7 @@ export async function exportMultiSheet(sheets) {
   wb.created  = new Date()
 
   for (const { rows, columns, sheetName } of sheets) {
-    const ws = wb.addWorksheet(sheetName.slice(0, 31))
+    const ws = wb.addWorksheet(sheetName.replace(/[\\/*?:\[\]]/g, '-').slice(0, 31) || 'Data')
     ws.columns = columns.map(c => ({ key: c.key, width: Math.max(c.label.length + 4, 18) }))
 
     const headerRow = ws.addRow(columns.map(c => c.label))

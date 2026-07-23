@@ -140,9 +140,9 @@ export default function Login() {
           </form>
 
           <div className="mt-5 pt-4 border-t border-gray-100 dark:border-gray-700">
-            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">Forgot your password?</p>
+            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">Forgot your Password?</p>
             <p className="text-xs text-gray-400 dark:text-gray-500 leading-relaxed">
-              Contact Salman, Krunal, Vivek Jaiswal, Anirudh, or Abhinaya to reset it.
+              Contact Admin.
             </p>
           </div>
         </div>
