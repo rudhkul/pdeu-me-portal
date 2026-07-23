@@ -49,7 +49,7 @@ export default function CoauthorNetwork({ publications = [], facultyName }) {
       .sort((a, b) => b[1] - a[1])
       .slice(0, 30)  // max 30 co-authors
 
-    if (entries.length === 0) {
+    if (records.length === 0) {
       svg.innerHTML = `
         <text x="280" y="200" text-anchor="middle" font-size="14"
           fill="var(--color-text-secondary)" font-family="sans-serif">
@@ -162,7 +162,7 @@ export default function CoauthorNetwork({ publications = [], facultyName }) {
       fill="var(--color-text-primary)">${facultyShort}</text>
     <text x="${cx}" y="${cy + 10}" text-anchor="middle"
       font-size="11" font-family="sans-serif"
-      fill="var(--color-text-secondary)">${entries.length} co-authors</text>`
+      fill="var(--color-text-secondary)">${records.length} co-authors</text>`
 
     svg.setAttribute('viewBox', `0 0 ${W} ${H}`)
     svg.innerHTML = html
